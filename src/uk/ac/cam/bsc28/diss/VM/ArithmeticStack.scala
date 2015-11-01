@@ -14,20 +14,26 @@ class ArithmeticStack {
   def peek = stack top
 
   def binaryLong(f: (Long, Long) => Long): Unit = {
-    val a = stack pop()
-    val b = stack pop()
-    stack push f(a, b)
+    stack synchronized {
+      val a = stack pop()
+      val b = stack pop()
+      stack push f(a, b)
+    }
   }
 
   def binaryBool(f: (Long, Long) => Boolean): Unit = {
-    val a = stack pop()
-    val b = stack pop()
-    stack push(if(f(a, b)) 1 else 0)
+    stack synchronized {
+      val a = stack pop()
+      val b = stack pop()
+      stack push (if (f(a, b)) 1 else 0)
+    }
   }
 
   def unaryBool(f: Long => Boolean): Unit = {
-    val a = stack pop()
-    stack push(if(f(a)) 1 else 0)
+    stack synchronized {
+      val a = stack pop()
+      stack push (if (f(a)) 1 else 0)
+    }
   }
 
   def operate(instruction: StackOperator): Unit = {
