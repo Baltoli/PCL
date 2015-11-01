@@ -11,10 +11,12 @@ class ArithmeticStack {
     }
   }
 
-  def binaryLong(f: (Long, Long) => Long): Long = {
+  def peek = stack top
+
+  def binaryLong(f: (Long, Long) => Long): Unit = {
     val a = stack pop()
     val b = stack pop()
-    f(a, b)
+    stack push f(a, b)
   }
 
   def binaryBool(f: (Long, Long) => Boolean): Unit = {
