@@ -26,13 +26,11 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         stack operate stackOp
 
       case DereferencePush(n) =>
-        (environment get n) foreach { e =>
-          e match {
-            case Left(c) =>
-              println("Cannot dereference a channel. Ending execution.")
-              programCounter = -1
-            case Right(v) => stack push v
-          }
+        environment get n foreach {
+          case Left(c) =>
+            println("Cannot dereference a channel. Ending execution.")
+            programCounter = -1
+          case Right(v) => stack push v
         }
 
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
@@ -85,8 +83,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case e: NumberFormatException => environment += (n -> Left(Channel(line)))
         }
 
-      case Print() =>
-        println(stack.peek)
+      case Print() => println(stack.peek)
 
       case NewInt(n) => environment += (n -> Right(0))
 
