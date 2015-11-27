@@ -18,8 +18,11 @@ object Threads {
   }
 
   def notifyAll(c: Channel, v: Either[Channel, Long]): Unit = {
-    all synchronized {
-      all foreach (_ receive(c, v))
+    while(true) {
+      all foreach { i =>
+        val sent = i.receive(c, v)
+        if(sent) return
+      }
     }
   }
 }
