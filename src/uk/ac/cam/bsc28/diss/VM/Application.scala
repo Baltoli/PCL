@@ -5,13 +5,18 @@ object Application extends App {
   val p = List(
     NewChannel("n"),
     Spawn("p"),
+
     Receive("n", "v"),
     DereferencePush("v"),
     Print(),
-    End(),
+    Jump("end"),
+
     Label("p"),
     Read("m"),
     SendValue("n", "m"),
+    Jump("end"),
+
+    Label("end"),
     Delete("n"),
     End()
   )
