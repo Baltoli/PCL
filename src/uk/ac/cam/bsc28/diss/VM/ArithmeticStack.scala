@@ -3,7 +3,7 @@ package uk.ac.cam.bsc28.diss.VM
 import scala.collection.mutable
 
 class ArithmeticStack {
-  val stack: mutable.Stack[Long] = mutable.Stack()
+  val stack: mutable.Stack[Long] = new mutable.Stack()
 
   def push(v: Long): Unit = {
     stack synchronized {
