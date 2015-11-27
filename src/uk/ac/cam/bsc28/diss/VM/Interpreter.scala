@@ -5,30 +5,64 @@ class Interpreter(p: List[Instruction]) extends Runnable {
   val stack = new ArithmeticStack()
   val program = p
   var environment = Map[String, Either[Channel, Long]]()
+  var labels = Map[String, Int]()
+
+  var programCounter = 0
 
   var blocked: Option[Pair[Channel, String]] = None
+
+  Threads.register(this)
 
   def execute(i: Instruction): Unit = {
     i match {
       case stackOp : StackOperator =>
         stack operate stackOp
       case Dereference(n) =>
-        environment get n map {
-          case Left(c) => println("Cannot dereference a channel.")
-          case Right(v) => stack push v
+        (environment get n) foreach { e =>
+          e match {
+            case Left(c) => println("Cannot dereference a channel.")
+            case Right(v) => stack push v
+          }
+        }
+      case Label(s) => () // Do nothing when we see a label - we've already extracted them,
+                          // and removing them from the program is a lot of work.
+      case Jump(s) =>
+        programCounter = labels(s)
+      case End() =>
+        programCounter = -1
+      case Spawn(s) =>
+        val newInt = new Interpreter(program)
+        newInt.programCounter = labels(s)
+        Threads.runInNewThread { _ =>
+          newInt.run()
         }
       case Receive(c, v) =>
         blocked = Some(c, v)
         this synchronized wait
+      case Print() =>
+        println(stack.peek)
+    }
+  }
+
+  def extractLabels(): Unit = {
+    program.zipWithIndex foreach { p =>
+      p._1 match {
+        case Label(s) => labels += (s -> p._2)
+        case _ => ()
+      }
     }
   }
 
   def run(): Unit = {
-    program map execute
+    extractLabels()
+    do {
+      execute(program(programCounter))
+      programCounter += 1
+    } while (programCounter > 0)
   }
 
   def receive(c: Channel, v: Either[Channel, Long]): Unit = {
-    blocked map (p =>
+    blocked foreach (p =>
       if(c == p._1) {
         environment += (p._2 -> v)
         blocked = None

@@ -15,10 +15,10 @@ case class CompareNames(n: String, m: String) extends StackOperator
 case class Label(s: String) extends Instruction
 case class Jump(s: String) extends Instruction
 case class End() extends Instruction
-case class Spawn(s: String) extends Instruction
+case class Spawn(s: String) extends Instruction // TODO
 case class Receive(c: Channel, n: String) extends Instruction
-case class Send[T](c: Channel, v: T) extends Instruction
-case class New[T](n: String, t: Class[T]) extends Instruction
-case class Delete(n: String) extends Instruction
-case class Read[T](n: String, t: Class[T]) extends Instruction
-case class Print[T](v: T) extends Instruction
+case class Send[T](c: Channel, v: T) extends Instruction // TODO
+case class New[T](n: String, t: Class[T]) extends Instruction // TODO
+case class Delete(n: String) extends Instruction // TODO
+case class Read[T](n: String, t: Class[T]) extends Instruction // TODO
+case class Print() extends Instruction
