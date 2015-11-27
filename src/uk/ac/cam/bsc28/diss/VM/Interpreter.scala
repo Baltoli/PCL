@@ -24,6 +24,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
     i match {
       case stackOp : StackOperator =>
         stack operate stackOp
+
       case DereferencePush(n) =>
         (environment get n) foreach { e =>
           e match {
@@ -33,23 +34,29 @@ class Interpreter(p: List[Instruction]) extends Runnable {
             case Right(v) => stack push v
           }
         }
+
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
                           // and removing them from the program is a lot of work.
+
       case Jump(s) =>
         programCounter = labels(s)
+
       case End() =>
         programCounter = -1
+
       case Spawn(s) =>
         val newInterpreter = copy()
         newInterpreter.programCounter = labels(s)
         Threads.runInNewThread { _ =>
           newInterpreter.run()
         }
+
       case SendInt(c, v) =>
         environment get c foreach {
           case Left(chan) => Threads.notifyAll(chan, Right(v))
           case _ => ()
         }
+
       case SendValue(c, n) =>
         environment get c foreach {
           case Left(chan) =>
@@ -58,6 +65,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
             }
           case _ => ()
         }
+
       case Receive(c, n) =>
         environment get c foreach {
             case Left(chan) =>
@@ -67,6 +75,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
               println("Not receiving on a channel. Ending.")
               programCounter = -1
         }
+
       case Read(n) =>
         val line = readLine("> ")
         try {
@@ -75,8 +84,15 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         } catch {
           case e: NumberFormatException => environment += (n -> Left(Channel(line)))
         }
+
       case Print() =>
         println(stack.peek)
+
+      case NewInt(n) => environment += (n -> Right(0))
+
+      case NewChannel(n) => environment += (n -> Left(Channel(n)))
+
+      case Delete(n) => environment -= n
     }
   }
 

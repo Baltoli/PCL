@@ -21,11 +21,12 @@ case class Spawn(s: String) extends Instruction
 
 case class Receive(c: String, n: String) extends Instruction
 
-case class SendInt(c: String, v: Int) extends Instruction // TODO
-case class SendValue(c: String, n: String) extends Instruction // TODO
+case class SendInt(c: String, v: Int) extends Instruction
+case class SendValue(c: String, n: String) extends Instruction
 
-case class New[T](n: String, t: Class[T]) extends Instruction // TODO
-case class Delete(n: String) extends Instruction // TODO
+case class NewInt(n: String) extends Instruction
+case class NewChannel(n: String) extends Instruction
+case class Delete(n: String) extends Instruction
 
-case class Read(n: String) extends Instruction // TODO
+case class Read(n: String) extends Instruction
 case class Print() extends Instruction
