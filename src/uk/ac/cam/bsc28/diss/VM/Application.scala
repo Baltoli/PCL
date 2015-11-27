@@ -1,13 +1,7 @@
 package uk.ac.cam.bsc28.diss.VM
 
 object Application extends App {
-  val p = List( Spawn("n"),
-                Spawn("n"),
-                Spawn("m"),
-                Push(2),
-                Push(0),
-                Multiply(),
-                Print(),
+  val p = List( Spawn("m"),
                 End(),
                 Label("n"),
                 Push(3),
@@ -16,6 +10,7 @@ object Application extends App {
                 Print(),
                 End(),
                 Label("m"),
+                Spawn("n"),
                 Push(8),
                 Push(2),
                 Multiply(),

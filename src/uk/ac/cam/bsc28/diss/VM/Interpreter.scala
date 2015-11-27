@@ -13,6 +13,13 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   Threads.register(this)
 
+  def copy(): Interpreter = {
+    val i = new Interpreter(program)
+    i.environment = environment
+    i.labels = labels
+    i
+  }
+
   def execute(i: Instruction): Unit = {
     i match {
       case stackOp : StackOperator =>
@@ -31,10 +38,10 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case End() =>
         programCounter = -1
       case Spawn(s) =>
-        val newInt = new Interpreter(program)
-        newInt.programCounter = labels(s)
+        val newInterpreter = copy()
+        newInterpreter.programCounter = labels(s)
         Threads.runInNewThread { _ =>
-          newInt.run()
+          newInterpreter.run()
         }
       case Receive(c, v) =>
         blocked = Some(c, v)
