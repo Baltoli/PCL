@@ -18,10 +18,11 @@ object Threads {
   }
 
   def notifyAll(c: Channel, v: Either[Channel, Long]): Unit = {
-    while(true) {
+    var end = false
+    while(!end) {
       all foreach { i =>
         val sent = i.receive(c, v)
-        if(sent) return
+        if(sent) end = true
       }
     }
   }

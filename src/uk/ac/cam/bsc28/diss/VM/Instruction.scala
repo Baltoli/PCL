@@ -15,6 +15,8 @@ case class CompareNames(n: String, m: String) extends StackOperator
 
 case class Label(s: String) extends Instruction
 case class Jump(s: String) extends Instruction
+case class JumpIfZero(s: String) extends Instruction
+case class JumpIfNonZero(s: String) extends Instruction
 
 case class End() extends Instruction
 case class Spawn(s: String) extends Instruction
