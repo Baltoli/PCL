@@ -13,6 +13,8 @@ class ArithmeticStack {
 
   def peek = stack top
 
+  def pop = stack pop
+
   def binaryLong(f: (Long, Long) => Long): Unit = {
     stack synchronized {
       val a = stack pop()

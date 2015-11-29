@@ -39,6 +39,12 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case Jump(s) =>
         programCounter = labels(s)
 
+      case JumpIfZero(s) =>
+        if((stack pop) == 0) programCounter = labels(s)
+
+      case JumpIfNonZero(s) =>
+        if((stack pop) != 0) programCounter = labels(s)
+
       case End() =>
         programCounter = -1
 
