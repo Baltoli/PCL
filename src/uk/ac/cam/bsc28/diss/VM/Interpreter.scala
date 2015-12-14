@@ -3,7 +3,11 @@ package uk.ac.cam.bsc28.diss.VM
 class Interpreter(p: List[Instruction]) extends Runnable {
 
   val stack = new ArithmeticStack()
+
+  // TODO: instruction sequence shouldn't be copied
   val program = p
+
+  // TODO: consider separate scopes and shadowing issues
   var environment = Map[String, Either[Channel, Long]]()
   var labels = Map[String, Int]()
 
@@ -13,6 +17,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   Threads.register(this)
 
+  // TODO: check spawn semantics from the calculus
   def copy(): Interpreter = {
     val interpreter = new Interpreter(program)
     interpreter.environment = environment
@@ -25,7 +30,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case stackOp : StackOperator =>
         stack operate stackOp
 
-      case DereferencePush(n) =>
+      case Load(n) =>
         environment get n foreach {
           case Left(c) =>
             println("Cannot dereference a channel. Ending execution.")

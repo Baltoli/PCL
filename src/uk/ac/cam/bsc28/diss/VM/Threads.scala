@@ -1,6 +1,6 @@
 package uk.ac.cam.bsc28.diss.VM
 
-object Threads {
+object Threads { // TODO: Scheduler
   var all = List[Interpreter]()
 
   def runInNewThread(f: Unit => Unit): Unit = {
@@ -17,6 +17,10 @@ object Threads {
     }
   }
 
+  // TODO: broadcast vs. unicast!!!
+  // TODO: pi-calculus semantics specify unicast but broadcast may be a useful extension
+  // TODO: further investigation here
+  // TODO: nondeterminism strategy
   def notifyAll(c: Channel, v: Either[Channel, Long]): Unit = {
     var end = false
     while(!end) {
