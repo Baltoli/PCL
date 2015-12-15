@@ -22,7 +22,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   var blocked: Option[Pair[Channel, Variable]] = None
 
-  Threads.register(this)
+  Scheduler.register(this)
 
   // TODO: check spawn semantics from the calculus
   def copy(): Interpreter = {
@@ -63,7 +63,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case Spawn(s) =>
         val newInterpreter = copy()
         newInterpreter.programCounter = labels(s)
-        Threads.runInNewThread { _ =>
+        Scheduler.runInNewThread { _ =>
           newInterpreter.run()
         }
 
@@ -71,14 +71,14 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.
       case SendAtomDirect(chan, atom) =>
-        Threads.notifyAll(chan, atom)
+        Scheduler.notifyAll(chan, atom)
 
       // In this case we need to look up the environment for the
       // channel on which we are sending the atom. If we find an
       // appropriate entry in the environment then we can
       case SendAtomIndirect(channelVar, atom) =>
         environment get channelVar foreach {
-          case Left(chan) => Threads.notifyAll(chan, atom)
+          case Left(chan) => Scheduler.notifyAll(chan, atom)
           case _ => () // TODO: this should be a fatal error
         }
 
@@ -88,7 +88,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case SendVariableDirect(chan, varName) =>
         environment get varName match {
           case Some(atom) =>
-            Threads.notifyAll(chan, atom)
+            Scheduler.notifyAll(chan, atom)
           case None =>
             () // TODO: fatal error
         }
@@ -99,7 +99,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         environment get varName match {
           case Some(atom) =>
             environment get channelVar foreach {
-              case Left(chan) => Threads.notifyAll(chan, atom)
+              case Left(chan) => Scheduler.notifyAll(chan, atom)
               case _ => () // TODO: fatal error
             }
           case None =>

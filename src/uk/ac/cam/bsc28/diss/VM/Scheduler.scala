@@ -2,7 +2,7 @@ package uk.ac.cam.bsc28.diss.VM
 
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-object Threads { // TODO: Scheduler
+object Scheduler {
   var all = List[Interpreter]()
 
   def runInNewThread(f: Unit => Unit): Unit = {
