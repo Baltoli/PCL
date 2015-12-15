@@ -15,7 +15,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
     *
     * TODO: Instead of either, use an alias / custom type here.
     */
-  var environment = Map[String, Either[Channel, Long]]()
+  var environment = Map[Variable, Either[Channel, Long]]()
   var labels = Map[String, Int]()
 
   var programCounter = 0
@@ -37,12 +37,12 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case stackOp : StackOperator =>
         stack operate stackOp
 
-      case Load(n) =>
-        environment get n foreach {
+      case Load(v) =>
+        environment get v foreach {
           case Left(c) =>
             println("Cannot dereference a channel. Ending execution.")
             programCounter = -1
-          case Right(v) => stack push v
+          case Right(value) => stack push value
         }
 
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
@@ -67,7 +67,9 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           newInterpreter.run()
         }
 
-      case SendInt(c, v) =>
+      // TODO: new versions of these
+      // For now, these versions are out of date.
+      /*case SendInt(c, v) =>
         environment get c foreach {
           case Left(chan) => Threads.notifyAll(chan, Right(v))
           case _ => ()
@@ -80,13 +82,13 @@ class Interpreter(p: List[Instruction]) extends Runnable {
               Threads.notifyAll(chan, e)
             }
           case _ => ()
-        }
+        }*/
 
       case ReceiveDirect(c, n) =>
         () // TODO: implement
 
       case ReceiveIndirect(vc, n) =>
-        () // TODO: implement
+        () // TODO: implement (lookup in env.)
 
       case Read(n) =>
         val line = readLine("> ")
