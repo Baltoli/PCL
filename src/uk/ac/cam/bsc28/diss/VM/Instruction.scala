@@ -1,5 +1,7 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import uk.ac.cam.bsc28.diss.VM.Types.Atom
+
 // TODO: name review
 
 abstract class Instruction
@@ -91,6 +93,11 @@ case class ReceiveIndirect(vc: Variable, n: Variable) extends Instruction
 //  * Atom Indirect
 //  * Variable Direct
 //  * Variable Indirect
+
+case class SendAtomDirect(c: Channel, a: Atom) extends Instruction
+case class SendAtomIndirect(vc: Variable, a: Atom) extends Instruction
+case class SendVariableDirect(c: Channel, v: Variable) extends Instruction
+case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 
 // TODO: different names? possible to be clearer
 // TODO: better types
