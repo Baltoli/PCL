@@ -2,6 +2,8 @@ package uk.ac.cam.bsc28.diss.VM
 
 class Interpreter(p: List[Instruction]) extends Runnable {
 
+  type Atom = Either[Channel, Long]
+
   val stack = new ArithmeticStack()
 
   // TODO: instruction sequence shouldn't be copied - instead
@@ -12,10 +14,8 @@ class Interpreter(p: List[Instruction]) extends Runnable {
   /**
     * The interpreter environment maps _variables_ to either atoms
     * or integer values.
-    *
-    * TODO: Instead of either, use an alias / custom type here.
     */
-  var environment = Map[Variable, Either[Channel, Long]]()
+  var environment = Map[Variable, Atom]()
   var labels = Map[String, Int]()
 
   var programCounter = 0
@@ -126,7 +126,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
     } while (programCounter > 0)
   }
 
-  def receive(c: Channel, v: Either[Channel, Long]): Boolean = {
+  def receive(c: Channel, v: Atom): Boolean = {
     blocked foreach (p =>
       if(c == p._1) {
         environment += (p._2 -> v)
