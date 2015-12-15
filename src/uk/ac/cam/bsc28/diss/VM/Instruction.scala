@@ -32,9 +32,9 @@ case class CompareZero() extends StackOperator
 
 // What we want this to do ultimately is compare the underlying
 // channel beneath two variables - i.e. env[n] == env[m].
-case class CompareNames(n: String, m: String) extends StackOperator // TODO: rethink this. Resolve name/variable ambiguity through syntax
-// TODO: read into erlang atoms / ruby symbols
+case class CompareNames(n: Variable, m: Variable) extends Instruction // TODO: rename
 
+// could labels be a better type? Not critical but maybe good
 case class Label(s: String) extends Instruction
 case class Jump(s: String) extends Instruction
 case class JumpIfZero(s: String) extends Instruction
@@ -103,9 +103,17 @@ case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 // TODO: better types
 // TODO: let x in ... ? similar bind
 // TODO: possibly include a value for new int
-case class NewInt(n: String) extends Instruction
-case class NewChannel(n: String) extends Instruction
-case class Delete(n: String) extends Instruction
 
-case class Read(n: String) extends Instruction
+// These instructions relate to variable scoping. In the 'pure' pi-calculus there is an
+// operation that produces a new name with a limited scope - in this variant language I
+// will assume that the universe of names is wholly available from the beginning. However
+// it might be useful to have a `let X = (@atom|100) in ...` construct where we can
+// introduce a variable with a value without having to receive it on a channel. My initial
+// approach to this is now a bit outdated - we now probably want the `let` syntax with the
+// same curly braces. In addition, we probably only need one variant, as all we are doing is
+// binding an Atom to a Variable. We do still need a scope deletion instruction.
+case class Let(vn: Variable, a: Atom) extends Instruction
+case class Delete(vn: Variable) extends Instruction
+
+case class Read(vn: Variable) extends Instruction
 case class Print() extends Instruction
