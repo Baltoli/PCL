@@ -1,8 +1,8 @@
 package uk.ac.cam.bsc28.diss.VM
 
-class Interpreter(p: List[Instruction]) extends Runnable {
+import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-  type Atom = Either[Channel, Long]
+class Interpreter(p: List[Instruction]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
