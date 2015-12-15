@@ -1,5 +1,7 @@
 package uk.ac.cam.bsc28.diss.VM
 
+// TODO: can we define an 'atom' as 'either an integer or a channel'?
+
 /**
   * A channel in the language is similar to an Erlang atom or a Ruby symbol -
   * i.e. an element of a set of mutually distinct items. In the language syntax,

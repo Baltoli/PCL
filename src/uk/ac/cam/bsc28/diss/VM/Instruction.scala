@@ -5,14 +5,31 @@ package uk.ac.cam.bsc28.diss.VM
 abstract class Instruction
 abstract class StackOperator extends Instruction
 
-case class Push(v: Long) extends StackOperator
-case class Load(s: String) extends Instruction
+/**
+  * Pushes an integer value onto the stack.
+  *
+  * @param value The integer to be pushed onto the stack.
+  */
+case class Push(value: Long) extends StackOperator
+
+/**
+  * A Load instruction attempts to look up a variable in the
+  * executing environment for an integer value. If such a value
+  * can be found, it is pushed onto the arithmetic stack for use
+  * in calculations.
+  *
+  * @param v The variable name to look for in the environment.
+  */
+case class Load(v: Variable) extends Instruction
 case class Add() extends StackOperator
 case class Subtract() extends StackOperator
 case class Multiply() extends StackOperator
 case class Divide() extends StackOperator
 case class CompareEqual() extends StackOperator
 case class CompareZero() extends StackOperator
+
+// What we want this to do ultimately is compare the underlying
+// channel beneath two variables - i.e. env[n] == env[m].
 case class CompareNames(n: String, m: String) extends StackOperator // TODO: rethink this. Resolve name/variable ambiguity through syntax
 // TODO: read into erlang atoms / ruby symbols
 
@@ -62,9 +79,18 @@ case class ReceiveIndirect(vc: Variable, n: Variable) extends Instruction
 
 // TODO: consider sending nondeterminism - erlang model vs. handshaking
 // TODO: write about semantic choices later on in report
-// TODO: syntactic classes separate here for variables and names
-case class SendInt(c: String, v: Int) extends Instruction
-case class SendValue(c: String, n: String) extends Instruction
+
+// Similarly to a receive instruction, we need to think about names vs. variables when
+// we perform a send instruction. We have the same situation as receive r.e. the channel
+// name we send on - is it direct or indirect? We must also consider the object being sent
+// - I think we have two cases here. Either we have an integer or channel literal in the
+// program, which we can implement as a single instruction sending an Atom with the correct
+// data inside it, or we have a variable name, in which case we perform a dereference. So
+// the permutations we need here are:
+//  * Atom Direct
+//  * Atom Indirect
+//  * Variable Direct
+//  * Variable Indirect
 
 // TODO: different names? possible to be clearer
 // TODO: better types
