@@ -85,7 +85,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case SendAtomIndirect(channelVar, atom) =>
         environment get channelVar match {
           case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
-          case _ => () // TODO: this should be a fatal error
+          case _ => fatalError()
         }
 
       // In this case we know the channel but not the data to be
@@ -98,7 +98,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case Some(atom) =>
             Scheduler.notifyAll(chan, atom)
           case None =>
-            () // TODO: fatal error
+            fatalError()
         }
 
       // This case just combines the two cases from above where we need
@@ -109,23 +109,30 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case Some(atom) =>
             environment get channelVar match {
               case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
-              case _ => () // TODO: fatal error
+              case _ => fatalError()
             }
           case None =>
-            () // TODO: fatal error
+            fatalError()
         }
 
       // In this case we know the channel and the variable name that will
       // form a blocking pair, so we can just update `blocked` and call
       // a synchronized wait.
       case ReceiveDirect(c, n) =>
-        () // TODO: implement
+        blocked = Some((c,n))
+        this synchronized wait
 
       // Similar to above, but we need to also look up the channel stored
       // in the variable before we can block on it. Fatal error if no such
       // variable is in the env OR if it's holding an int.
       case ReceiveIndirect(vc, n) =>
-        () // TODO: implement (lookup in env.)
+        environment get vc match {
+          case Some(Left(chan)) =>
+            blocked = Some((chan, n))
+            this synchronized wait
+          case _ =>
+            fatalError()
+        }
 
       case Read(n) =>
         val line = readLine("> ")
@@ -139,7 +146,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case Print() => println(stack.peek)
 
       case Let(vn, a) =>
-        () // TODO: implement
+        environment += (vn -> a)
 
       case Delete(vn) => environment -= vn
     }
@@ -172,6 +179,11 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       }
     )
     false
+  }
+
+  def fatalError() = {
+    // TODO: actually be a fatal error
+    // TODO: maybe add a string describing the fatal error
   }
 
 }
