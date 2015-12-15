@@ -4,10 +4,17 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
-  // TODO: instruction sequence shouldn't be copied
+  // TODO: instruction sequence shouldn't be copied - instead
+  // TODO: use a global interpreter manager that is responsible
+  // TODO: for spawning off interpreters.
   val program = p
 
-  // TODO: consider separate scopes and shadowing issues
+  /**
+    * The interpreter environment maps _variables_ to either atoms
+    * or integer values.
+    *
+    * TODO: Instead of either, use an alias / custom type here.
+    */
   var environment = Map[String, Either[Channel, Long]]()
   var labels = Map[String, Int]()
 
@@ -75,15 +82,11 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case _ => ()
         }
 
-      case Receive(c, n) =>
-        environment get c foreach {
-            case Left(chan) =>
-              blocked = Some(chan, n)
-              this synchronized wait
-            case _ =>
-              println("Not receiving on a channel. Ending.")
-              programCounter = -1
-        }
+      case ReceiveDirect(c, n) =>
+        () // TODO: implement
+
+      case ReceiveIndirect(vc, n) =>
+        () // TODO: implement
 
       case Read(n) =>
         val line = readLine("> ")
