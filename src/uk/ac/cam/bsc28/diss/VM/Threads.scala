@@ -1,5 +1,7 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import uk.ac.cam.bsc28.diss.VM.Types.Atom
+
 object Threads { // TODO: Scheduler
   var all = List[Interpreter]()
 
@@ -21,7 +23,7 @@ object Threads { // TODO: Scheduler
   // TODO: pi-calculus semantics specify unicast but broadcast may be a useful extension
   // TODO: further investigation here
   // TODO: nondeterminism strategy
-  def notifyAll(c: Channel, v: Either[Channel, Long]): Unit = {
+  def notifyAll(c: Channel, v: Atom): Unit = {
     var end = false
     while(!end) {
       all foreach { i =>

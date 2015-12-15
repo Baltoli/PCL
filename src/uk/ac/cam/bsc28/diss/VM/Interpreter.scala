@@ -67,34 +67,44 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           newInterpreter.run()
         }
 
-      // TODO: new versions of these
-      // For now, these versions are out of date.
-      /*case SendInt(c, v) =>
-        environment get c foreach {
-          case Left(chan) => Threads.notifyAll(chan, Right(v))
-          case _ => ()
+      // In this case we don't need to look up anything in the
+      // environment, so we can just directly notify the thread
+      // manager with the atom being sent.
+      case SendAtomDirect(chan, atom) =>
+        Threads.notifyAll(chan, atom)
+
+      // In this case we need to look up the environment for the
+      // channel on which we are sending the atom. If we find an
+      // appropriate entry in the environment then we can
+      case SendAtomIndirect(channelVar, atom) =>
+        environment get channelVar foreach {
+          case Left(chan) => Threads.notifyAll(chan, atom)
+          case _ => () // TODO: this should be a fatal error
         }
 
-      case SendValue(c, n) =>
-        environment get c foreach {
-          case Left(chan) =>
-            environment get n foreach { e =>
-              Threads.notifyAll(chan, e)
+      // In this case we know the channel but not the data to be
+      // sent - we look up the data and throw an error if no data
+      // exists under the given variable name.
+      case SendVariableDirect(chan, varName) =>
+        environment get varName match {
+          case Some(atom) =>
+            Threads.notifyAll(chan, atom)
+          case None =>
+            () // TODO: fatal error
+        }
+
+      // This case just combines the two cases from above where we need
+      // to look into the environment.
+      case SendVariableIndirect(channelVar, varName) =>
+        environment get varName match {
+          case Some(atom) =>
+            environment get channelVar foreach {
+              case Left(chan) => Threads.notifyAll(chan, atom)
+              case _ => () // TODO: fatal error
             }
-          case _ => ()
-        }*/
-
-      case SendAtomDirect(c, a) =>
-        () // TODO: implement
-
-      case SendAtomIndirect(vc, a) =>
-        () // TODO: implement
-
-      case SendVariableDirect(c, v) =>
-        () // TODO: implement
-
-      case SendVariableIndirect(vc, v) =>
-        () // TODO: implement
+          case None =>
+            () // TODO: fatal error
+        }
 
       case ReceiveDirect(c, n) =>
         () // TODO: implement
