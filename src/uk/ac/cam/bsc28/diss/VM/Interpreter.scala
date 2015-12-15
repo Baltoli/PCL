@@ -20,7 +20,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   var programCounter = 0
 
-  var blocked: Option[Pair[Channel, String]] = None
+  var blocked: Option[Pair[Channel, Variable]] = None
 
   Threads.register(this)
 
@@ -84,6 +84,18 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case _ => ()
         }*/
 
+      case SendAtomDirect(c, a) =>
+        () // TODO: implement
+
+      case SendAtomIndirect(vc, a) =>
+        () // TODO: implement
+
+      case SendVariableDirect(c, v) =>
+        () // TODO: implement
+
+      case SendVariableIndirect(vc, v) =>
+        () // TODO: implement
+
       case ReceiveDirect(c, n) =>
         () // TODO: implement
 
@@ -101,11 +113,10 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
       case Print() => println(stack.peek)
 
-      case NewInt(n) => environment += (n -> Right(0))
+      case Let(vn, a) =>
+        () // TODO: implement
 
-      case NewChannel(n) => environment += (n -> Left(Channel(n)))
-
-      case Delete(n) => environment -= n
+      case Delete(vn) => environment -= vn
     }
   }
 

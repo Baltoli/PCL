@@ -48,7 +48,6 @@ class ArithmeticStack {
         case Divide() => binaryLong(_ / _)
         case CompareEqual() => binaryBool(_ == _)
         case CompareZero() => unaryBool(_ == 0)
-        case CompareNames(n, m) => stack push(if(n == m) 1 else 0)
       }
     }
   }
