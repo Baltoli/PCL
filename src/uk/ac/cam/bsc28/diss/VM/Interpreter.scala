@@ -182,6 +182,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
   }
 
   def fatalError() = {
+    print("Oops")
     // TODO: actually be a fatal error
     // TODO: maybe add a string describing the fatal error
   }

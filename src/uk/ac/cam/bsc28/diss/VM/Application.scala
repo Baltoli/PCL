@@ -3,11 +3,18 @@ package uk.ac.cam.bsc28.diss.VM
 object Application extends App {
   val c = Channel("chan")
   val p = List(
-  Push(0),
-  JumpIfNonZero("print"),
+  Let(Variable("x"), Right(0)),
+  Load(Variable("x")),
+  Print(),
+  Delete(Variable("x")),
+  Read(Variable("i")),
+  Read(Variable("c")),
+  Spawn("other"),
+  SendVariableIndirect(Variable("c"), Variable("i")),
   End(),
-  Label("print"),
-  Push(12),
+  Label("other"),
+  ReceiveDirect(Channel("chan"), Variable("n")),
+  Load(Variable("n")),
   Print(),
   End()
   )
