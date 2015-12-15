@@ -75,16 +75,24 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
       // In this case we need to look up the environment for the
       // channel on which we are sending the atom. If we find an
-      // appropriate entry in the environment then we can
+      // appropriate entry in the environment then we can notify
+      // a thread waiting on that channel.
+      //
+      // We use the nested match Some(Left(...)) as a shortcut -
+      // the only valid case for getting the channel is when we
+      // have an entry in the environment (Some) and it is a channel
+      // (Left).
       case SendAtomIndirect(channelVar, atom) =>
-        environment get channelVar foreach {
-          case Left(chan) => Scheduler.notifyAll(chan, atom)
+        environment get channelVar match {
+          case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
           case _ => () // TODO: this should be a fatal error
         }
 
       // In this case we know the channel but not the data to be
       // sent - we look up the data and throw an error if no data
-      // exists under the given variable name.
+      // exists under the given variable name. No need for nested
+      // matching here as we aren't breaking the Either down any
+      // further.
       case SendVariableDirect(chan, varName) =>
         environment get varName match {
           case Some(atom) =>
@@ -94,21 +102,28 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         }
 
       // This case just combines the two cases from above where we need
-      // to look into the environment.
+      // to look into the environment. Same use of nested matching as
+      // before for the channel variable.
       case SendVariableIndirect(channelVar, varName) =>
         environment get varName match {
           case Some(atom) =>
-            environment get channelVar foreach {
-              case Left(chan) => Scheduler.notifyAll(chan, atom)
+            environment get channelVar match {
+              case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
               case _ => () // TODO: fatal error
             }
           case None =>
             () // TODO: fatal error
         }
 
+      // In this case we know the channel and the variable name that will
+      // form a blocking pair, so we can just update `blocked` and call
+      // a synchronized wait.
       case ReceiveDirect(c, n) =>
         () // TODO: implement
 
+      // Similar to above, but we need to also look up the channel stored
+      // in the variable before we can block on it. Fatal error if no such
+      // variable is in the env OR if it's holding an int.
       case ReceiveIndirect(vc, n) =>
         () // TODO: implement (lookup in env.)
 
