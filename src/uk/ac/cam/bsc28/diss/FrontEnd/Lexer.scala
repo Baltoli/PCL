@@ -4,6 +4,9 @@ package uk.ac.cam.bsc28.diss.FrontEnd
   * Some thoughts from the variable / atom update to the interpreter - we don't
   * ever actually need type annotations as type mismatch can be handled just fine
   * at runtime (in the name of making the compiler simpler but less friendly).
+  *
+  * We also have new syntax to think about - instead of `new` we are instead using
+  * a let Var = @atom in { ... } syntax. Let is the only new token here.
   */
 
 object Lexer {
@@ -13,7 +16,7 @@ object Lexer {
   val operator = """^(\+|-|\*|\/)(.*)""".r
   val in = """^in(.*)""".r
   val out = """^out(.*)""".r
-  val newVar = """^new(.*)""".r
+  val let = """^let(.*)""".r
   val parallel = """^\|(.*)""".r
   val sequential = """^\.(.*)""".r
   val end = """^end(.*)""".r
@@ -32,7 +35,7 @@ object Lexer {
       case operator(op, rest) => Some(Operator(op), rest trim)
       case in(rest) => Some(In(), rest trim)
       case out(rest) => Some(Out(), rest trim)
-      case newVar(rest) => Some(New(), rest trim)
+      case let(rest) => Some(Let(), rest trim)
       case parallel(rest) => Some(Parallel(), rest trim)
       case sequential(rest) => Some(Sequential(), rest trim)
       case end(rest) => Some(End(), rest trim)

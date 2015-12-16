@@ -8,7 +8,7 @@ case class IntegerLiteral(i: Int) extends Token
 case class Operator(o: String) extends Token
 case class In() extends Token
 case class Out() extends Token
-case class New() extends Token
+case class Let() extends Token
 case class Parallel() extends Token
 case class Sequential() extends Token
 case class End() extends Token
