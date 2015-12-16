@@ -147,6 +147,12 @@ class Interpreter(p: List[Instruction]) extends Runnable {
             fatalError()
         }
 
+      // TODO: read and print can't be primitives - need to allow dereferencing them.
+      //       note that this approach will also allow possible extension functionality
+      //       - for example, providing a method loading approach allowing for externally
+      //       provided atoms that run specified code on send / receive? Might need a bit
+      //       of a reorg. of the scheduler etc. but the core principle of allowing
+      //       external code to perform send / receives is interesting.
       case Read(n) =>
         val line = readLine("> ")
         try {
