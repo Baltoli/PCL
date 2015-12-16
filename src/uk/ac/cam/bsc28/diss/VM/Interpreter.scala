@@ -68,11 +68,13 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         }
 
       case LoadAndCompareAtom(n,m) =>
-        var eq = false
-        environment get m foreach { ma =>
-          environment get n foreach { na =>
-            eq = (ma == na)
-          }
+        val eq = environment get m map { ma =>
+            environment get n map { na =>
+              ma == na
+            }
+        } match {
+          case Some(Some(_)) => true
+          case _ => false
         }
         stack push (if (eq) 1 else 0)
 
@@ -190,7 +192,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
     false
   }
 
-  def fatalError() = {
+  def fatalError(): Any = {
     print("Oops")
     // TODO: actually be a fatal error
     // TODO: maybe add a string describing the fatal error
