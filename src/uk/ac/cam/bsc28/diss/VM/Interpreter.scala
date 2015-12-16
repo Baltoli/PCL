@@ -67,6 +67,15 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           newInterpreter.run()
         }
 
+      case LoadAndCompareAtom(n,m) =>
+        var eq = false
+        environment get m foreach { ma =>
+          environment get n foreach { na =>
+            eq = (ma == na)
+          }
+        }
+        stack push (if (eq) 1 else 0)
+
       // In this case we don't need to look up anything in the
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.

@@ -2,8 +2,6 @@ package uk.ac.cam.bsc28.diss.VM
 
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-// TODO: name review
-
 abstract class Instruction
 abstract class StackOperator extends Instruction
 
@@ -32,7 +30,7 @@ case class CompareZero() extends StackOperator
 
 // What we want this to do ultimately is compare the underlying
 // channel beneath two variables - i.e. env[n] == env[m].
-case class CompareNames(n: Variable, m: Variable) extends Instruction // TODO: rename
+case class LoadAndCompareAtom(n: Variable, m: Variable) extends Instruction
 
 // could labels be a better type? Not critical but maybe good
 case class Label(s: String) extends Instruction
