@@ -73,7 +73,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
               ma == na
             }
         } match {
-          case Some(Some(_)) => true
+          case Some(Some(bv)) => bv
           case _ => false
         }
         stack push (if (eq) 1 else 0)
