@@ -8,7 +8,7 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 
 object Lexer {
   val varName = """^([A-Z][a-z]*)(.*)""".r
-  val channelName = """(@([a-z]|_)+)(.*)""".r
+  val channelName = """^@((?:[a-z]|_)+)(.*)""".r
   val intLiteral = """^(-?[0-9]+)(.*)""".r
   val operator = """^(\+|-|\*|\/)(.*)""".r
   val in = """^in(.*)""".r
@@ -62,6 +62,7 @@ object Lexer {
   }
 
   def tokenize(p: String): List[Token] = {
-    tokenize(p, List[Token]())
+    val oneLine = p filter(_ >= ' ')
+    tokenize(p = oneLine, acc = List[Token]())
   }
 }

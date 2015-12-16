@@ -13,6 +13,6 @@ case class Par(left: ASTNode, right: ASTNode) extends ASTNode
 case class ReplicateProc(proc: ASTNode) extends ASTNode
 case class Condition(x: ASTNode, y: ASTNode) extends ASTNode
 case class If(c: Condition, proc: ASTNode) extends ASTNode
-case class NewVar(name: Name, typeName: Type, proc: ASTNode) extends ASTNode
+// TODO: let
 case class Seq(left: ASTNode, right: ASTNode) extends ASTNode
 case class EndNode() extends ASTNode
