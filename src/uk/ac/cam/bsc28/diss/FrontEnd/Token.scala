@@ -3,7 +3,7 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 abstract class Token
 
 case class VarName(s: String) extends Token
-case class Type(t: String) extends Token
+case class ChannelName(c: String) extends Token
 case class IntegerLiteral(i: Int) extends Token
 case class Operator(o: String) extends Token
 case class In() extends Token
@@ -20,4 +20,3 @@ case class CloseSquareBracket() extends Token
 case class OpenCurlyBracket() extends Token
 case class CloseCurlyBracket() extends Token
 case class Equals() extends Token
-case class TypedAs() extends Token

@@ -1,8 +1,14 @@
 package uk.ac.cam.bsc28.diss.FrontEnd
 
+/**
+  * Some thoughts from the variable / atom update to the interpreter - we don't
+  * ever actually need type annotations as type mismatch can be handled just fine
+  * at runtime (in the name of making the compiler simpler but less friendly).
+  */
+
 object Lexer {
-  val varName = """^([a-z]+)(.*)""".r
-  val typeName = """^(Int|Channel)(.*)""".r
+  val varName = """^([A-Z][a-z]*)(.*)""".r
+  val channelName = """(@([a-z]|_)+)(.*)""".r
   val intLiteral = """^(-?[0-9]+)(.*)""".r
   val operator = """^(\+|-|\*|\/)(.*)""".r
   val in = """^in(.*)""".r
@@ -19,11 +25,9 @@ object Lexer {
   val openCurlyBracket = """^\{(.*)""".r
   val closeCurlyBracket = """^\}(.*)""".r
   val equals = """^=(.*)""".r
-  val typedAs = """^:(.*)""".r
 
   private def eat(p: String): Option[(Token, String)] = {
     p match {
-      case typeName(name, rest) => Some(Type(name), rest trim)
       case intLiteral(value, rest) => Some(IntegerLiteral(value toInt), rest trim)
       case operator(op, rest) => Some(Operator(op), rest trim)
       case in(rest) => Some(In(), rest trim)
@@ -40,9 +44,9 @@ object Lexer {
       case openCurlyBracket(rest) => Some(OpenCurlyBracket(), rest trim)
       case closeCurlyBracket(rest) => Some(CloseCurlyBracket(), rest trim)
       case equals(rest) => Some(Equals(), rest trim)
-      case typedAs(rest) => Some(TypedAs(), rest trim)
 
       case varName(name, rest) => Some(VarName(name), rest trim)
+      case channelName(name, rest) => Some(ChannelName(name), rest trim)
       case _ => None
     }
   }
