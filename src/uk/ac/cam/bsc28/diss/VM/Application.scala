@@ -3,20 +3,19 @@ package uk.ac.cam.bsc28.diss.VM
 object Application extends App {
   val c = Channel("chan")
   val p = List(
-  Let(Variable("x"), Right(0)),
-  Load(Variable("x")),
-  Print(),
-  Delete(Variable("x")),
-  Read(Variable("i")),
-  Read(Variable("c")),
-  Spawn("other"),
-  SendVariableIndirect(Variable("c"), Variable("i")),
+  Spawn("a"),
+  Spawn("b"),
+  SendAtomDirect(Channel("chan"), Left(Channel(""))),
   End(),
-  Label("other"),
-  ReceiveDirect(Channel("chan"), Variable("n")),
-  Load(Variable("n")),
+  Label("a"),
+  ReceiveDirect(Channel("chan"), Variable("x_a")),
+  Push(10),
   Print(),
-  Load(Variable("ndwdd")),
+  End(),
+  Label("b"),
+  ReceiveDirect(Channel("chan"), Variable("x_b")),
+  Push(20),
+  Print(),
   End()
   )
   val i = new Interpreter(p)

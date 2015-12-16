@@ -77,8 +77,7 @@ case class ReceiveDirect(c: Channel, n: Variable) extends Instruction
   */
 case class ReceiveIndirect(vc: Variable, n: Variable) extends Instruction
 
-// TODO: consider sending nondeterminism - erlang model vs. handshaking
-// TODO: write about semantic choices later on in report
+// TODO: email Alan r.e. erlang model vs. handshaking
 
 // Similarly to a receive instruction, we need to think about names vs. variables when
 // we perform a send instruction. We have the same situation as receive r.e. the channel

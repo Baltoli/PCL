@@ -6,10 +6,15 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
-  // TODO: instruction sequence shouldn't be copied - instead
-  // TODO: use a global interpreter manager that is responsible
-  // TODO: for spawning off interpreters.
-  val program = p
+  //  TODO: instruction seq copying
+  /**
+    * In the future it may be useful to not copy the instruction
+    * sequence when we spawn a new interpreter off. Instead the
+    * scheduler should maintain the instruction sequence and have
+    * all the interpreters refer to it. This works because the
+    * sequence is never actually modified.
+    */
+  val program: List[Instruction] = p
 
   /**
     * The interpreter environment maps _variables_ to either atoms
@@ -24,7 +29,6 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   Scheduler.register(this)
 
-  // TODO: check spawn semantics from the calculus
   def copy(): Interpreter = {
     val interpreter = new Interpreter(program)
     interpreter.environment = environment

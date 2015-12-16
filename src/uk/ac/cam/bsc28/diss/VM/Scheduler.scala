@@ -19,16 +19,11 @@ object Scheduler {
     }
   }
 
-  // TODO: broadcast vs. unicast!!!
-  // TODO: pi-calculus semantics specify unicast but broadcast may be a useful extension
-  // TODO: further investigation here
-  // TODO: nondeterminism strategy
   def notifyAll(c: Channel, v: Atom): Unit = {
-    var end = false
-    while(!end) {
-      all foreach { i =>
-        val sent = i.receive(c, v)
-        if(sent) end = true
+    var sent = false
+    all foreach { i =>
+      if (!sent) {
+        if (i receive(c, v)) sent = true
       }
     }
   }
