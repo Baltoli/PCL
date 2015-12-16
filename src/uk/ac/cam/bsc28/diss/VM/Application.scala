@@ -16,6 +16,7 @@ object Application extends App {
   ReceiveDirect(Channel("chan"), Variable("n")),
   Load(Variable("n")),
   Print(),
+  Load(Variable("ndwdd")),
   End()
   )
   val i = new Interpreter(p)

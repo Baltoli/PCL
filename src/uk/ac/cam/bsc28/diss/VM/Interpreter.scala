@@ -38,11 +38,9 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         stack operate stackOp
 
       case Load(v) =>
-        environment get v foreach {
-          case Left(c) =>
-            println("Cannot dereference a channel. Ending execution.")
-            programCounter = -1
-          case Right(value) => stack push value
+        environment get v match {
+          case Some(Right(value)) => stack push value
+          case _ => fatalError()
         }
 
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
@@ -194,8 +192,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   def fatalError(): Any = {
     print("Oops")
-    // TODO: actually be a fatal error
-    // TODO: maybe add a string describing the fatal error
+    System.exit(-1)
   }
 
 }

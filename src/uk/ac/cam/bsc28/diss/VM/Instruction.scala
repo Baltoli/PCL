@@ -97,11 +97,6 @@ case class SendAtomIndirect(vc: Variable, a: Atom) extends Instruction
 case class SendVariableDirect(c: Channel, v: Variable) extends Instruction
 case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 
-// TODO: different names? possible to be clearer
-// TODO: better types
-// TODO: let x in ... ? similar bind
-// TODO: possibly include a value for new int
-
 // These instructions relate to variable scoping. In the 'pure' pi-calculus there is an
 // operation that produces a new name with a limited scope - in this variant language I
 // will assume that the universe of names is wholly available from the beginning. However
