@@ -1,6 +1,6 @@
 package uk.ac.cam.bsc28.diss.FrontEnd
 
-abstract class Token
+trait Token
 
 case class VarName(s: String) extends Token
 case class ChannelName(c: String) extends Token
