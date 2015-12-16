@@ -3,11 +3,18 @@ package uk.ac.cam.bsc28.diss.VM
 object Application extends App {
   val c = Channel("chan")
   val p = List(
-  Push(0),
-  JumpIfNonZero("print"),
+  Spawn("a"),
+  Spawn("b"),
+  SendAtomDirect(Channel("chan"), Left(Channel(""))),
   End(),
-  Label("print"),
-  Push(12),
+  Label("a"),
+  ReceiveDirect(Channel("chan"), Variable("x_a")),
+  Push(10),
+  Print(),
+  End(),
+  Label("b"),
+  ReceiveDirect(Channel("chan"), Variable("x_b")),
+  Push(20),
   Print(),
   End()
   )
