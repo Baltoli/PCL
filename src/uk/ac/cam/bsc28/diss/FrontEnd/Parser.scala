@@ -3,6 +3,10 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 import uk.ac.cam.bsc28.diss.FrontEnd.ParseTree.EmptyProcessAux
 import uk.ac.cam.bsc28.diss.FrontEnd.Parser.ParseResult
 
+// TODO: clean up code
+// TODO: better error propagation
+// TODO: tests
+
 class ParseError(e: String) {
   val err = e
 }

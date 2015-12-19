@@ -44,19 +44,4 @@ package uk.ac.cam.bsc28.diss.FrontEnd
  * ProcessNode'     ::= seq ProcessNode ProcessNode'
  *                  |   ε
  *
- * TODO: codify this grammar in its current form in notes
- * TODO: we can probably simplify the type hierarchy to just ASTNodes with named cases
- *
- * # Nullable
- * Start            -> false
- * Name             -> false
- * Op               -> false
- * ExpressionNode   -> false
- * ArithmeticNode   -> false
- * ArithmeticNode'  -> true
- * ProcessNode      -> false
- * ProcessNode'     -> true
- *
- * TODO: make first and follow sets
- * TODO: create predictive parsing table
  */

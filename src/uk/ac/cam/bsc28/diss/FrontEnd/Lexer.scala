@@ -59,7 +59,7 @@ object Lexer {
       case Some((token, rest)) => tokenize(rest, token::acc)
       case None => p match {
         case "" => acc reverse
-        case _ => throw new ArithmeticException()
+        case _ => throw new ArithmeticException() // TODO
       }
     }
   }
