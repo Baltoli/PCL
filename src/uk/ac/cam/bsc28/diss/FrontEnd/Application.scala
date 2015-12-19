@@ -4,7 +4,7 @@ object Application extends App {
   val program =
     """
       |let X = @stdio {
-      |   out X(0).
+      |   out X(2 + 2*3).
       |   end
       |}
     """.stripMargin
