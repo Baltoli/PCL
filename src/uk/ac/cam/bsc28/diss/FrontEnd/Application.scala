@@ -3,10 +3,10 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 object Application extends App {
   val program =
     """
-       |let Y = 0 {
+       |let Y = 0 + 10*1 {
        |  (in @stdio(X) | out @stdio(Y)).
        |  in @stdio(Z).
-       |  out Z(Y).
+       |  out Z(Y / 2).
        |  end
        |}
     """.stripMargin

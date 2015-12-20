@@ -76,7 +76,39 @@ class Parser(lexed: List[Token]) {
   }
 
   private def matchArithmeticAux(): ParseResult[ParseTree.ArithmeticAux] = {
-    Left(ParseTree.EmptyArithmeticAux()) // TODO
+    val opResult = matchOperation()
+    opResult match {
+      case Left(op) =>
+        val arithmeticResult = matchArithmetic()
+        val moreResult = matchArithmeticAux()
+        (arithmeticResult, moreResult) match {
+          case (Left(arithmetic), Left(more)) =>
+            Left(ParseTree.OperationArithmeticAux(op, arithmetic, more))
+          case (Right(e), _) => Right(e)
+          case (_, Right(e)) => Right(e)
+        }
+      case _ =>
+        Left(ParseTree.EmptyArithmeticAux())
+    }
+  }
+
+  private def matchOperation(): ParseResult[ParseTree.Operation] = {
+    currentToken() match {
+      case Some(Operator("+")) =>
+        eat(Operator("+"))
+        Left(ParseTree.AddNode())
+      case Some(Operator("*")) =>
+        eat(Operator("*"))
+        Left(ParseTree.MultiplyNode())
+      case Some(Operator("-")) =>
+        eat(Operator("-"))
+        Left(ParseTree.SubtractNode())
+      case Some(Operator("/")) =>
+        eat(Operator("/"))
+        Left(ParseTree.DivideNode())
+      case _ =>
+        Parser.syntaxError("Syntax error: unrecognized operation.")
+    }
   }
 
   private def matchExpression(): ParseResult[ParseTree.Expression] = {
