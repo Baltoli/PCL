@@ -17,10 +17,19 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 
 object AST {
 
-  private case class ParseTreeSequentialProcess(first: ParseTree.Process,
-                                                second: ParseTree.Process) extends ParseTree.Process
+  trait Process extends ParseTree.Node
+  case class OutProcess(chan: ParseTree.Name, expr: ParseTree.Expression) extends Process
+  case class InProcess(chan: ParseTree.Name, varName: ParseTree.VariableName) extends Process
+  case class ParallelProcess(left: Process, right: Process) extends Process
+  case class ReplicateProcess(proc: Process) extends Process
+  case class IfProcess(left: ParseTree.Expression, right: ParseTree.Expression, proc: Process) extends Process
+  case class LetProcess(name: ParseTree.VariableName, value: ParseTree.Expression, proc: Process) extends Process
+  case class EndProcess() extends Process
 
-  def rebalance(tree: ParseTree.Node): ParseTree.Node = {
+  private case class ParseTreeSequentialInternalProcess(first: ParseTree.InternalProcess,
+                                                        second: ParseTree.InternalProcess) extends ParseTree.InternalProcess
+
+  private def rebalance(tree: ParseTree.Node): ParseTree.Node = {
     tree match {
       case ParseTree.ProcessStart(p) =>
         ParseTree.ProcessStart(rebalanceProcess(p))
@@ -29,42 +38,42 @@ object AST {
     }
   }
 
-  private def rebalanceProcess(tree: ParseTree.Process): ParseTree.Process = {
+  private def rebalanceProcess(tree: ParseTree.InternalProcess): ParseTree.InternalProcess = {
     val stripped = removeProcessAux(tree)
     tree match {
-      case ParseTree.InProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
-      case ParseTree.OutProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
-      case ParseTree.ParallelProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
-      case ParseTree.ReplicateProcess(_, aux) => sequenceIfNeeded(stripped, aux)
-      case ParseTree.IfProcess(_, _, _, aux) => sequenceIfNeeded(stripped, aux)
-      case ParseTree.LetProcess(_, _, _, aux) => sequenceIfNeeded(stripped, aux)
+      case ParseTree.AugmentedInProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
+      case ParseTree.AugmentedOutProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
+      case ParseTree.ParallelInternalProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
+      case ParseTree.ReplicateInternalProcess(_, aux) => sequenceIfNeeded(stripped, aux)
+      case ParseTree.IfInternalProcess(_, _, _, aux) => sequenceIfNeeded(stripped, aux)
+      case ParseTree.LetInternalProcess(_, _, _, aux) => sequenceIfNeeded(stripped, aux)
       case _ => stripped
     }
   }
 
-  private def sequenceIfNeeded(proc: ParseTree.Process, aux: ParseTree.ProcessAux): ParseTree.Process = {
+  private def sequenceIfNeedearseTree.AugmentedProcess, aux: ParseTree.ProcearseTree.AugmentedProcess = {
     processFromAux(aux) match {
-      case Some(next) => ParseTreeSequentialProcess(proc, rebalanceProcess(next))
+      case Some(next) => ParseTreeSequentialInternalProcess(proc, rebalanceProcess(next))
       case None => proc
     }
   }
 
-  private def processFromAux(aux: ParseTree.ProcessAux): Option[ParseTree.Process] = {
+  private def processFromAux(aux: ParseTree.ProcessAux):arseTree.AugmentedProcess] = {
     aux match {
       case ParseTree.SequentialProcessAux(proc, _) => Some(proc)
       case ParseTree.EmptyProcessAux() => None
     }
   }
 
-  private def removeProcessAux(proc: ParseTree.Process): ParseTree.Process = {
+  private def removeProcessAuarseTree.AugmentedPrarseTree.AugmentedProcess = {
     val empty = ParseTree.EmptyProcessAux()
     proc match {
-      case ParseTree.InProcess(c, v, _) => ParseTree.InProcess(c, v, empty)
-      case ParseTree.OutProcess(c, e, _) => ParseTree.OutProcess(c, e, empty)
-      case ParseTree.ParallelProcess(l, r, _) => ParseTree.ParallelProcess(l, r, empty)
-      case ParseTree.ReplicateProcess(p, _) => ParseTree.ReplicateProcess(p, empty)
-      case ParseTree.IfProcess(l, r, p, _) => ParseTree.IfProcess(l, r, p, empty)
-      case ParseTree.LetProcess(n, v, p, _) => ParseTree.LetProcess(n, v, p, empty)
+      case ParseTree.AugmentedInProcess(c, v, _) => ParseTree.AugmentedInProcess(c, v, empty)
+      case ParseTree.AugmentedOutProcess(c, e, _) => ParseTree.AugmentedOutProcess(c, e, empty)
+      case ParseTree.ParallelInternalProcess(l, r, _) => ParseTree.ParallelInternalProcess(l, r, empty)
+      case ParseTree.ReplicateInternalProcess(p, _) => ParseTree.ReplicateInternalProcess(p, empty)
+      case ParseTree.IfInternalProcess(l, r, p, _) => ParseTree.IfInternalProcess(l, r, p, empty)
+      case ParseTree.LetInternalProcess(n, v, p, _) => ParseTree.LetInternalProcess(n, v, p, empty)
       case _ => proc
     }
   }
