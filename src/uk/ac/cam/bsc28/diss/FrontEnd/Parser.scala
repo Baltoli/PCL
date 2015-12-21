@@ -1,6 +1,5 @@
 package uk.ac.cam.bsc28.diss.FrontEnd
 
-import uk.ac.cam.bsc28.diss.FrontEnd.ParseTree.MultiplyNode
 import uk.ac.cam.bsc28.diss.FrontEnd.Parser.ParseResult
 
 // TODO: clean up code
@@ -40,7 +39,12 @@ class Parser(lexed: List[Token]) {
     }
   }
 
-  def parse() = matchStart()
+  def parse(): Option[ParseTree.Program] = {
+    matchStart() match {
+      case Left(s) => ParseTree.getAST(s)
+      case _ => None
+    }
+  }
 
   private def matchStart(): ParseResult[ParseTree.Start] = {
     matchProcess() match {
@@ -158,7 +162,7 @@ class Parser(lexed: List[Token]) {
         eat(CloseBracket())
         val moreResult = matchProcessAux()
         (varResult, exprResult, moreResult) match {
-          case (Left(varName), Left(expr), Left(more)) => Left(ParseTree.AugmentedOutProcess(varName, expr, more))
+          case (Left(varName), Left(expr), Left(more)) => Left(ParseTree.OutInternalProcess(varName, expr, more))
           case _ => Parser.syntaxError("Process: out")
         }
 
@@ -175,7 +179,7 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (chanResult, nameResult, moreResult) match {
           case (Left(chan), Some(name), Left(more)) =>
-            Left(ParseTree.AugmentedInProcess(chan, ParseTree.VariableName(name), more))
+            Left(ParseTree.InInternalProcess(chan, ParseTree.VariableName(name), more))
           case (Right(e), _, _) =>
             Right(e)
           case (_, None, _) =>

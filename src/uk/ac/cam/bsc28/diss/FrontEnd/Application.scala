@@ -12,8 +12,7 @@ object Application extends App {
   val p = new Parser(lexed)
 
   val result = p.parse()
-  result match {
-    case Left(t) => println(t)
-    case Right(e) => println(e.err)
+  result map { prog =>
+    println(prog)
   }
 }
