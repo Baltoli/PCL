@@ -1,6 +1,6 @@
 package uk.ac.cam.bsc28.diss.FrontEnd
 
-import uk.ac.cam.bsc28.diss.FrontEnd.ParseTree.EmptyProcessAux
+import uk.ac.cam.bsc28.diss.FrontEnd.ParseTree.MultiplyNode
 import uk.ac.cam.bsc28.diss.FrontEnd.Parser.ParseResult
 
 // TODO: clean up code
@@ -61,73 +61,90 @@ class Parser(lexed: List[Token]) {
     }
   }
 
-  private def matchArithmetic(): ParseResult[ParseTree.Arithmetic] = {
-    currentToken() match {
-      case Some(IntegerLiteral(v)) =>
-        eat(IntegerLiteral(v))
-        val moreResult = matchArithmeticAux()
-        moreResult match {
-          case Left(more) => Left(ParseTree.IntegerWithAux(v, more))
-          case _ => Parser.syntaxError("Arithmetic: bad aux")
-        }
-
-      case _ => Parser.syntaxError("Arithmetic")
-    }
-  }
-
-  private def matchArithmeticAux(): ParseResult[ParseTree.ArithmeticAux] = {
-    val opResult = matchOperation()
-    opResult match {
-      case Left(op) =>
-        val arithmeticResult = matchArithmetic()
-        val moreResult = matchArithmeticAux()
-        (arithmeticResult, moreResult) match {
-          case (Left(arithmetic), Left(more)) =>
-            Left(ParseTree.OperationArithmeticAux(op, arithmetic, more))
-          case (Right(e), _) => Right(e)
-          case (_, Right(e)) => Right(e)
-        }
-      case _ =>
-        Left(ParseTree.EmptyArithmeticAux())
-    }
-  }
-
-  private def matchOperation(): ParseResult[ParseTree.Operation] = {
+  private def matchAddOperation(): ParseResult[ParseTree.AddOperation] = {
     currentToken() match {
       case Some(Operator("+")) =>
         eat(Operator("+"))
         Left(ParseTree.AddNode())
-      case Some(Operator("*")) =>
-        eat(Operator("*"))
-        Left(ParseTree.MultiplyNode())
       case Some(Operator("-")) =>
         eat(Operator("-"))
         Left(ParseTree.SubtractNode())
+      case _ =>
+        Parser.syntaxError("Syntax error: unrecognized (add precedence) operation.")
+    }
+  }
+
+  private def matchMultiplyOperation(): ParseResult[ParseTree.MultiplyOperation] = {
+    currentToken() match {
+      case Some(Operator("*")) =>
+        eat(Operator("*"))
+        Left(ParseTree.MultiplyNode())
       case Some(Operator("/")) =>
         eat(Operator("/"))
         Left(ParseTree.DivideNode())
       case _ =>
-        Parser.syntaxError("Syntax error: unrecognized operation.")
+        Parser.syntaxError("Syntax error: unrecognized (multiply precedence) operation.")
+    }
+  }
+
+  private def matchFactor(): ParseResult[ParseTree.Factor] = {
+    currentToken() match {
+      case Some(VarName(vn)) =>
+        eat(VarName(vn))
+        Left(ParseTree.VariableFactor(ParseTree.VariableName(vn)))
+      case Some(IntegerLiteral(iv)) =>
+        eat(IntegerLiteral(iv))
+        Left(ParseTree.LiteralFactor(iv))
+
+      case _ => Parser.syntaxError("Syntax Error: Expected integer or variable name.")
+    }
+  }
+
+  private def matchTerm(): ParseResult[ParseTree.Term] = {
+    val firstResult = matchFactor()
+    val opResult = matchMultiplyOperation()
+
+    val secondResult = if (opResult.isLeft) {
+      matchTerm()
+    } else {
+      Right(new ParseError("No term operation."))
+    }
+
+    (firstResult, opResult, secondResult) match {
+      case (Left(first), Left(op), Left(second)) =>
+        Left(ParseTree.OpTerm(first, op, second))
+      case (Left(first), Right(_), _) =>
+        Left(ParseTree.FactorTerm(first))
+
+      case (Right(e), _, _) => Right(e)
+      case (_, _, Right(e)) => Right(e)
     }
   }
 
   private def matchExpression(): ParseResult[ParseTree.Expression] = {
     currentToken() match {
-      case Some(VarName(_)) | Some(ChannelName(_)) =>
-        val nameResult = matchName()
-        nameResult match {
-          case Left(n) => Left(ParseTree.NameExpression(n))
-          case _ => Parser.syntaxError("Expression: bad name")
+      case Some(ChannelName(cn)) =>
+        eat(ChannelName(cn))
+        Left(ParseTree.ChannelExpression(ParseTree.ChannelName(cn)))
+
+      case _ =>
+        val firstResult = matchTerm ()
+        val opResult = matchAddOperation ()
+        val secondResult = if (opResult.isLeft) {
+          matchExpression()
+        } else {
+          Right(new ParseError("No expression operation."))
         }
 
-      case Some(IntegerLiteral(_)) =>
-        val arithmeticResult = matchArithmetic()
-        arithmeticResult match {
-          case Left(v) => Left(ParseTree.ArithmeticExpression(v))
-          case _ => Parser.syntaxError("Expresssion: bad arithmetic")
-        }
+        (firstResult, opResult, secondResult) match {
+          case (Left(first), Left(op), Left(second) ) =>
+            Left (ParseTree.OpExpression (first, op, second) )
+          case (Left(first), Right(_), _) =>
+            Left(ParseTree.TermExpression(first))
 
-      case _ => Parser.syntaxError("Expression")
+          case (Right(e), _, _) => Right(e)
+          case (_, _, Right(e)) => Right(e)
+        }
     }
   }
 
@@ -255,7 +272,7 @@ class Parser(lexed: List[Token]) {
           case (_, Right(e)) => Right(e)
         }
 
-      case _ => Left(EmptyProcessAux())
+      case _ => Left(ParseTree.EmptyProcessAux())
     }
   }
 

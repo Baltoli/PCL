@@ -12,22 +12,26 @@ object ParseTree {
   case class VariableName(name: String) extends Name
   case class ChannelName(name: String) extends Name
 
-  trait Operation extends Node
-  case class AddNode() extends Operation
-  case class MultiplyNode() extends Operation
-  case class SubtractNode() extends Operation
-  case class DivideNode() extends Operation
+  trait AddOperation extends Node
+  case class AddNode() extends AddOperation
+  case class SubtractNode() extends AddOperation
 
-  trait Arithmetic extends Node
-  case class IntegerWithAux(value: Long, more: ArithmeticAux) extends Arithmetic
+  trait MultiplyOperation extends Node
+  case class MultiplyNode() extends MultiplyOperation
+  case class DivideNode() extends MultiplyOperation
 
-  trait ArithmeticAux extends Node
-  case class OperationArithmeticAux(op: Operation, right: Arithmetic, more: ArithmeticAux) extends ArithmeticAux
-  case class EmptyArithmeticAux() extends ArithmeticAux
+  trait Factor extends Node
+  case class VariableFactor(n: VariableName) extends Factor
+  case class LiteralFactor(v: Long) extends Factor
+
+  trait Term extends Node
+  case class FactorTerm(f: Factor) extends Term
+  case class OpTerm(l: Factor, op: MultiplyOperation, r: Term) extends Term
 
   trait Expression extends Node
-  case class NameExpression(name: Name) extends Expression
-  case class ArithmeticExpression(arith: Arithmetic) extends Expression
+  case class TermExpression(t: Term) extends Expression
+  case class OpExpression(l: Term, op: AddOperation, r: Expression) extends Expression
+  case class ChannelExpression(c: ChannelName) extends Expression
 
   trait Process extends Node
   case class OutProcess(chan: Name, expr: Expression, more: ProcessAux) extends Process
