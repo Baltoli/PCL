@@ -147,6 +147,21 @@ class Interpreter(p: List[Instruction]) extends Runnable {
             fatalError()
         }
 
+      // TODO: read and print can't be primitives - need to allow dereferencing them.
+      //       note that this approach will also allow possible extension functionality
+      //       - for example, providing a method loading approach allowing for externally
+      //       provided atoms that run specified code on send / receive? Might need a bit
+      //       of a reorg. of the scheduler etc. but the core principle of allowing
+      //       external code to perform send / receives is interesting.
+      //
+      //       If we went with this approach, then it would possibly be a good idea to
+      //       include some kind of per-thread exclusivity (possibly optional?) to deal
+      //       with concurrency issues. One way to do this would be to force the registered
+      //       code to take an interpreter ID as an extra parameter so that if the code
+      //       requires it we can enforce synchronisation. With this in mind, the basic idea
+      //       would be to have syntax like `extern @chan` which will cause the interpreter
+      //       to redirect in / out statements to `@chan` to external code with a given
+      //       interface.
       case Read(n) =>
         val line = readLine("> ")
         try {
