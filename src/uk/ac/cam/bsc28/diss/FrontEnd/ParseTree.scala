@@ -2,6 +2,8 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 
 object ParseTree {
 
+  // TODO: access modifiers for future usage
+
   trait Node
   case class Program(prog: Process) extends Node
 
