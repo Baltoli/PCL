@@ -17,8 +17,8 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 
 object AST {
 
-  private case class SequentialProcess(first: ParseTree.Process,
-                                       second: ParseTree.Process) extends ParseTree.Process
+  private case class ParseTreeSequentialProcess(first: ParseTree.Process,
+                                                second: ParseTree.Process) extends ParseTree.Process
 
   def rebalance(tree: ParseTree.Node): ParseTree.Node = {
     tree match {
@@ -44,7 +44,7 @@ object AST {
 
   private def sequenceIfNeeded(proc: ParseTree.Process, aux: ParseTree.ProcessAux): ParseTree.Process = {
     processFromAux(aux) match {
-      case Some(next) => SequentialProcess(proc, rebalanceProcess(next))
+      case Some(next) => ParseTreeSequentialProcess(proc, rebalanceProcess(next))
       case None => proc
     }
   }
