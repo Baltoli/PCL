@@ -94,15 +94,29 @@ object ParseTree {
   }
 
   private def rebalanceProcess(tree: InternalProcess): InternalProcess = {
-    val stripped = removeProcessAux(tree)
     tree match {
-      case InInternalProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
-      case OutInternalProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
-      case ParallelInternalProcess(_, _, aux) => sequenceIfNeeded(stripped, aux)
-      case ReplicateInternalProcess(_, aux) => sequenceIfNeeded(stripped, aux)
-      case IfInternalProcess(_, _, _, aux) => sequenceIfNeeded(stripped, aux)
-      case LetInternalProcess(_, _, _, aux) => sequenceIfNeeded(stripped, aux)
-      case _ => stripped
+      case InInternalProcess(_, _, aux) => sequenceIfNeeded(tree, aux)
+
+      case OutInternalProcess(_, _, aux) => sequenceIfNeeded(tree, aux)
+
+      case ParallelInternalProcess(l, r, aux) =>
+        val lb = rebalanceProcess(l)
+        val rb = rebalanceProcess(r)
+        sequenceIfNeeded(ParallelInternalProcess(lb, rb, aux), aux)
+
+      case ReplicateInternalProcess(p, aux) =>
+        val pb = rebalanceProcess(p)
+        sequenceIfNeeded(ReplicateInternalProcess(pb, aux), aux)
+
+      case IfInternalProcess(l, r, p, aux) =>
+        val pb = rebalanceProcess(p)
+        sequenceIfNeeded(IfInternalProcess(l, r, pb, aux), aux)
+
+      case LetInternalProcess(v, e, p, aux) =>
+        val pb = rebalanceProcess(p)
+        sequenceIfNeeded(LetInternalProcess(v, e, pb, aux), aux)
+
+      case _ => tree
     }
   }
 
@@ -117,19 +131,6 @@ object ParseTree {
     aux match {
       case SequentialProcessAux(proc, _) => Some(proc)
       case EmptyProcessAux() => None
-    }
-  }
-
-  private def removeProcessAux(proc: InternalProcess) = {
-    val empty = EmptyProcessAux()
-    proc match {
-      case InInternalProcess(c, v, _) => InInternalProcess(c, v, empty)
-      case OutInternalProcess(c, e, _) => OutInternalProcess(c, e, empty)
-      case ParallelInternalProcess(l, r, _) => ParallelInternalProcess(l, r, empty)
-      case ReplicateInternalProcess(p, _) => ReplicateInternalProcess(p, empty)
-      case IfInternalProcess(l, r, p, _) => IfInternalProcess(l, r, p, empty)
-      case LetInternalProcess(n, v, p, _) => LetInternalProcess(n, v, p, empty)
-      case _ => proc
     }
   }
 

@@ -3,8 +3,11 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 object Application extends App {
   val program =
     """
-       |in @stdio(Z).
-       |out Z(1 + 2*3).
+       |let X = 2*2 - 1 {
+       |  out @stdio(X).
+       |  (in @chan(Y).end | out @chan(X + 10))
+       |}.
+       |!(out @stdio(Y*6 / 2).end).
        |end
     """.stripMargin
   val lexed = Lexer.tokenize(program)

@@ -41,7 +41,7 @@ class Parser(lexed: List[Token]) {
 
   def parse(): Option[ParseTree.Program] = {
     matchStart() match {
-      case Left(s) => ParseTree.getAST(s)
+      case Left(s) => println(s);ParseTree.getAST(s)
       case _ => None
     }
   }
