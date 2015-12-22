@@ -6,7 +6,15 @@ object Application extends App {
 
   val prog =
     """
-      |out Var(200 - 7 + 2*3).end
+      |out @stdio(@c).
+      |out @stdio(1).
+      |out @stdio(Var).
+      |out Chan(@c).
+      |out Chan(1).
+      |out Chan(Var).
+      |in @stdio(X).
+      |in Chan(Y).
+      |end
     """.stripMargin
 
   val tokens = Lexer.tokenize(prog)

@@ -15,35 +15,60 @@ class CodeGenerator(prog: Start) {
   def bytecodeForProcess(p: Process): List[Instruction] = {
     p match {
       case OutProcess(name, expr, aux) =>
-        (name, expr) match {
-          case _ => List()
-          /*case (ChannelName(cn), ChannelExpression(ChannelName(data))) =>
+        ((name, expr) match {
+          case (ChannelName(cn), ChannelExpression(ChannelName(data))) =>
             List(SendChannelDirect(Channel(cn), Channel(data)))
 
           case (VariableName(vn), ChannelExpression(ChannelName(data))) =>
             List(SendChannelIndirect(Variable(vn), Channel(data)))
 
-          case (ChannelName(cn), TermExpression(FactorTerm(VariableFactor(VariableName(data))))) =>
+          case (ChannelName(cn), TermAuxExpression(
+                                    FactorAuxTerm(
+                                      VariableFactor(VariableName(data)),
+                                      EmptyTermAux()
+                                    ),
+                                    EmptyExpressionAux())) =>
             List(SendVariableDirect(Channel(cn), Variable(data)))
 
-          case (VariableName(vn), TermExpression(FactorTerm(VariableFactor(VariableName(data))))) =>
-            println(expr)
+          case (VariableName(vn), TermAuxExpression(
+                                    FactorAuxTerm(
+                                      VariableFactor(VariableName(data)),
+                                      EmptyTermAux()
+                                    ),
+                                    EmptyExpressionAux())) =>
             List(SendVariableIndirect(Variable(vn), Variable(data)))
 
           case (ChannelName(cn), e) =>
             bytecodeForExpression(e) ++ List(SendIntDirect(Channel(cn)))
 
           case (VariableName(vn), e) =>
-            bytecodeForExpression(e) ++ List(SendIntIndirect(Variable(vn)))*/
-        }
+            bytecodeForExpression(e) ++ List(SendIntIndirect(Variable(vn)))
+        }) ++ bytecodeForProcessAux(aux)
 
-      case InProcess(chan, varName, aux) => List()
+      case InProcess(chanName, varName, aux) =>
+        ((chanName, varName) match {
+          case (ChannelName(cn), VariableName(in)) =>
+            List(ReceiveDirect(Channel(cn), Variable(in)))
+
+          case (VariableName(vn), VariableName(in)) =>
+            List(ReceiveIndirect(Variable(vn), Variable(in)))
+        }) ++ bytecodeForProcessAux(aux)
+
       case ParallelProcess(left, right, aux) => List()
       case ReplicateProcess(proc, aux) => List()
       case IfProcess(left, right, proc, aux) => List()
       case LetProcess(name, value, proc, aux) => List()
 
       case EndProcess() => List(End())
+    }
+  }
+
+  def bytecodeForProcessAux(aux: ProcessAux): List[Instruction] = {
+    aux match {
+      case SequentialProcessAux(proc, more) =>
+        bytecodeForProcess(proc) ++ bytecodeForProcessAux(more)
+
+      case EmptyProcessAux() => List()
     }
   }
 
