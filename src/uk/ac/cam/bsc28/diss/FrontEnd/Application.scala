@@ -3,19 +3,15 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 object Application extends App {
   val program =
     """
-       |let X = 2*2 - 1 {
-       |  out @stdio(X).
-       |  (in @chan(Y).end | out @chan(X + 10))
-       |}.
-       |!(out @stdio(Y*6 / 2).end).
-       |end
+       |out @c(1*4*5 + 2 + 3).in @stdio(X).end
     """.stripMargin
   val lexed = Lexer.tokenize(program)
   println(lexed)
   val p = new Parser(lexed)
 
   val result = p.parse()
-  result map { prog =>
-    println(prog)
+  result match {
+    case None => println("Parse error!")
+    case Some(x) => println(x)
   }
 }

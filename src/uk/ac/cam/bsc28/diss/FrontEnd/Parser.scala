@@ -39,9 +39,9 @@ class Parser(lexed: List[Token]) {
     }
   }
 
-  def parse(): Option[ParseTree.Program] = {
+  def parse(): Option[ParseTree.Start] = {
     matchStart() match {
-      case Left(s) => ParseTree.getAST(s)
+      case Left(s) => Some(s)
       case _ => None
     }
   }
@@ -105,23 +105,48 @@ class Parser(lexed: List[Token]) {
   }
 
   private def matchTerm(): ParseResult[ParseTree.Term] = {
-    val firstResult = matchFactor()
+    currentToken() match {
+      case Some(OpenBracket()) =>
+        eat(OpenBracket())
+        val exprResult = matchExpression()
+        eat(CloseBracket())
+        exprResult match {
+          case Left(expr) =>
+            Left(ParseTree.ParenthesisedExpressionTerm(expr))
+          case Right(e) => Right(e)
+        }
+
+      case Some(_) =>
+        val firstResult = matchFactor ()
+        val auxResult = matchTermAux ()
+        (firstResult, auxResult) match {
+          case (Left (first), Left (aux) ) =>
+            Left (ParseTree.FactorAuxTerm (first, aux))
+
+          case (Right (e), _) => Right (e)
+          case (_, Right (e) ) => Right (e)
+        }
+
+      case _ => Parser.syntaxError("Syntax error: EOF when parsing term.")
+    }
+  }
+
+  private def matchTermAux(): ParseResult[ParseTree.TermAux] = {
     val opResult = matchMultiplyOperation()
 
-    val secondResult = if (opResult.isLeft) {
-      matchTerm()
+    if (opResult.isLeft) {
+      val op = opResult.left.get
+      val factorResult = matchFactor()
+      val auxResult = matchTermAux()
+      (factorResult, auxResult) match {
+        case (Left(factor), Left(aux)) =>
+          Left(ParseTree.OperatorTermAux(op, factor, aux))
+
+        case (Right(e), _) => Right(e)
+        case (_, Right(e)) => Right(e)
+      }
     } else {
-      Right(new ParseError("No term operation."))
-    }
-
-    (firstResult, opResult, secondResult) match {
-      case (Left(first), Left(op), Left(second)) =>
-        Left(ParseTree.OpTerm(first, op, second))
-      case (Left(first), Right(_), _) =>
-        Left(ParseTree.FactorTerm(first))
-
-      case (Right(e), _, _) => Right(e)
-      case (_, _, Right(e)) => Right(e)
+      Left(ParseTree.EmptyTermAux())
     }
   }
 
@@ -131,28 +156,41 @@ class Parser(lexed: List[Token]) {
         eat(ChannelName(cn))
         Left(ParseTree.ChannelExpression(ParseTree.ChannelName(cn)))
 
-      case _ =>
-        val firstResult = matchTerm ()
-        val opResult = matchAddOperation ()
-        val secondResult = if (opResult.isLeft) {
-          matchExpression()
-        } else {
-          Right(new ParseError("No expression operation."))
+      case Some(_) =>
+        val termResult = matchTerm()
+        val auxResult = matchExpressionAux()
+        (termResult, auxResult) match {
+          case (Left(term), Left(aux)) =>
+            Left(ParseTree.TermAuxExpression(term, aux))
+
+          case (Right(e), _) => Right(e)
+          case (_, Right(e)) => Right(e)
         }
 
-        (firstResult, opResult, secondResult) match {
-          case (Left(first), Left(op), Left(second) ) =>
-            Left (ParseTree.OpExpression (first, op, second) )
-          case (Left(first), Right(_), _) =>
-            Left(ParseTree.TermExpression(first))
-
-          case (Right(e), _, _) => Right(e)
-          case (_, _, Right(e)) => Right(e)
-        }
+      case _ => Parser.syntaxError("Syntax Error: EOF when parsing expression.")
     }
   }
 
-  private def matchProcess(): ParseResult[ParseTree.InternalProcess] = {
+  private def matchExpressionAux(): ParseResult[ParseTree.ExpressionAux] = {
+    val opResult = matchAddOperation()
+
+    if (opResult.isLeft) {
+      val op = opResult.left.get
+      val termResult = matchTerm()
+      val auxResult = matchExpressionAux()
+      (termResult, auxResult) match {
+        case (Left(term), Left(aux)) =>
+          Left(ParseTree.OperatorExpressionAux(op, term, aux))
+
+        case (Right(e), _) => Right(e)
+        case (_, Right(e)) => Right(e)
+      }
+    } else {
+      Left(ParseTree.EmptyExpressionAux())
+    }
+  }
+
+  private def matchProcess(): ParseResult[ParseTree.Process] = {
     currentToken() match {
       case Some(Out()) =>
         eat(Out())
@@ -162,7 +200,7 @@ class Parser(lexed: List[Token]) {
         eat(CloseBracket())
         val moreResult = matchProcessAux()
         (varResult, exprResult, moreResult) match {
-          case (Left(varName), Left(expr), Left(more)) => Left(ParseTree.OutInternalProcess(varName, expr, more))
+          case (Left(varName), Left(expr), Left(more)) => Left(ParseTree.OutProcess(varName, expr, more))
           case _ => Parser.syntaxError("Process: out")
         }
 
@@ -179,7 +217,7 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (chanResult, nameResult, moreResult) match {
           case (Left(chan), Some(name), Left(more)) =>
-            Left(ParseTree.InInternalProcess(chan, ParseTree.VariableName(name), more))
+            Left(ParseTree.InProcess(chan, ParseTree.VariableName(name), more))
           case (Right(e), _, _) =>
             Right(e)
           case (_, None, _) =>
@@ -197,7 +235,7 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (leftResult, rightResult, moreResult) match {
           case (Left(leftProc), Left(rightProc), Left(more)) =>
-            Left(ParseTree.ParallelInternalProcess(leftProc, rightProc, more))
+            Left(ParseTree.ParallelProcess(leftProc, rightProc, more))
           case _ =>
             Parser.syntaxError("Process: parallel")
         }
@@ -209,7 +247,7 @@ class Parser(lexed: List[Token]) {
         eat(CloseBracket())
         val moreResult = matchProcessAux()
         (procResult, moreResult) match {
-          case (Left(proc), Left(more)) => Left(ParseTree.ReplicateInternalProcess(proc, more))
+          case (Left(proc), Left(more)) => Left(ParseTree.ReplicateProcess(proc, more))
           case _ => Parser.syntaxError("Process: replicate")
         }
 
@@ -225,7 +263,7 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (leftResult, rightResult, procResult, moreResult) match {
           case (Left(leftCond), Left(rightCond), Left(proc), Left(more)) =>
-            Left(ParseTree.IfInternalProcess(leftCond, rightCond, proc, more))
+            Left(ParseTree.IfProcess(leftCond, rightCond, proc, more))
           case _ => Parser.syntaxError("Process: if")
         }
 
@@ -245,7 +283,7 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (nameResult, exprResult, procResult, moreResult) match {
           case (Some(name), Left(expr), Left(proc), Left(more)) =>
-            Left(ParseTree.LetInternalProcess(ParseTree.VariableName(name), expr, proc, more))
+            Left(ParseTree.LetProcess(ParseTree.VariableName(name), expr, proc, more))
           case (None, _, _, _) =>
             Parser.syntaxError("Syntax error: Bad variable name in let expression.")
           case (_, Right(e), _, _) => Right(e)
@@ -255,7 +293,7 @@ class Parser(lexed: List[Token]) {
 
       case Some(End()) =>
         eat(End())
-        Left(ParseTree.EndInternalProcess())
+        Left(ParseTree.EndProcess())
 
       case _ =>
         println(currentToken())

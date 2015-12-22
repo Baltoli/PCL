@@ -3,20 +3,21 @@ package uk.ac.cam.bsc28.diss.CodeGeneration
 import uk.ac.cam.bsc28.diss.FrontEnd.ParseTree._
 import uk.ac.cam.bsc28.diss.VM._
 
-class CodeGenerator(prog: Program) {
+class CodeGenerator(prog: Start) {
 
   def generate(): List[Instruction] = {
     prog match {
-      case Program(proc) => bytecodeForProcess(proc)
+      case ProcessStart(proc) => bytecodeForProcess(proc)
       case _ => List()
     }
   }
 
   def bytecodeForProcess(p: Process): List[Instruction] = {
     p match {
-      case OutProcess(name, expr) =>
+      case OutProcess(name, expr, aux) =>
         (name, expr) match {
-          case (ChannelName(cn), ChannelExpression(ChannelName(data))) =>
+          case _ => List()
+          /*case (ChannelName(cn), ChannelExpression(ChannelName(data))) =>
             List(SendChannelDirect(Channel(cn), Channel(data)))
 
           case (VariableName(vn), ChannelExpression(ChannelName(data))) =>
@@ -33,17 +34,14 @@ class CodeGenerator(prog: Program) {
             bytecodeForExpression(e) ++ List(SendIntDirect(Channel(cn)))
 
           case (VariableName(vn), e) =>
-            bytecodeForExpression(e) ++ List(SendIntIndirect(Variable(vn)))
+            bytecodeForExpression(e) ++ List(SendIntIndirect(Variable(vn)))*/
         }
 
-      case InProcess(chan, varName) => List()
-      case ParallelProcess(left, right) => List()
-      case ReplicateProcess(proc) => List()
-      case IfProcess(left, right, proc) => List()
-      case LetProcess(name, value, proc) => List()
-
-      case SequentialProcess(first, second) =>
-        bytecodeForProcess(first) ++ bytecodeForProcess(second)
+      case InProcess(chan, varName, aux) => List()
+      case ParallelProcess(left, right, aux) => List()
+      case ReplicateProcess(proc, aux) => List()
+      case IfProcess(left, right, proc, aux) => List()
+      case LetProcess(name, value, proc, aux) => List()
 
       case EndProcess() => List(End())
     }
@@ -51,6 +49,9 @@ class CodeGenerator(prog: Program) {
 
   def bytecodeForExpression(e: Expression): List[Instruction] = {
     e match {
+      case _ => List()
+    }
+        /*
       case TermExpression(t) =>
         bytecodeForTerm(t)
 
@@ -61,14 +62,17 @@ class CodeGenerator(prog: Program) {
           case SubtractNode() => Subtract()
         })
         val rCode = bytecodeForExpression(r)
-        lCode ++ operatorCode ++ rCode
+        lCode ++ rCode ++ operatorCode
 
       case ChannelExpression(c) => List() // TODO: this is an error
-    }
+    }*/
   }
 
   def bytecodeForTerm(t: Term): List[Instruction] = {
     t match {
+      case _ => List()
+    }
+        /*
       case FactorTerm(f) =>
         bytecodeForFactor(f)
 
@@ -79,8 +83,8 @@ class CodeGenerator(prog: Program) {
           case DivideNode() => Divide()
         })
         val rCode = bytecodeForTerm(r)
-        lCode ++ operatorCode ++ rCode
-    }
+        lCode ++ rCode ++ operatorCode
+    }*/
   }
 
   def bytecodeForFactor(f: Factor): List[Instruction] = {
