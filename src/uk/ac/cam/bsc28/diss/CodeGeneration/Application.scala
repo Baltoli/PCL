@@ -6,7 +6,7 @@ object Application extends App {
 
   val prog =
     """
-      |out @stdio(@wootwoot).end
+      |out Var(X + 2).end
     """.stripMargin
 
   val tokens = Lexer.tokenize(prog)

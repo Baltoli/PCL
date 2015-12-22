@@ -5,7 +5,7 @@ object Application extends App {
   val p = List(
   Spawn("a"),
   Spawn("b"),
-  SendAtomDirect(Channel("chan"), Left(Channel(""))),
+  SendChannelDirect(Channel("chan"), Channel("")),
   End(),
   Label("a"),
   ReceiveDirect(Channel("chan"), Variable("x_a")),
