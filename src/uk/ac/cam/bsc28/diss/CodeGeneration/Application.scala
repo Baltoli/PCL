@@ -8,8 +8,8 @@ object Application extends App {
   val prog =
     """
       |(
-      | in @x(A) |
-      | out @x(@y)
+      | (in @x(A) | out @y(@y)) |
+      | (in @y(B) | out @x(@x))
       |).
       |end
     """.stripMargin
