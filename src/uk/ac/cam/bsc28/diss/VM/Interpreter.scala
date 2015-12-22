@@ -83,8 +83,8 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // In this case we don't need to look up anything in the
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.
-      case SendAtomDirect(chan, atom) =>
-        Scheduler.notifyAll(chan, atom)
+      case SendChannelDirect(chan, data) =>
+        Scheduler.notifyAll(chan, Left(data))
 
       // In this case we need to look up the environment for the
       // channel on which we are sending the atom. If we find an
@@ -95,9 +95,18 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // the only valid case for getting the channel is when we
       // have an entry in the environment (Some) and it is a channel
       // (Left).
-      case SendAtomIndirect(channelVar, atom) =>
+      case SendChannelIndirect(channelVar, data) =>
         environment get channelVar match {
-          case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
+          case Some(Left(chan)) => Scheduler.notifyAll(chan, Left(data))
+          case _ => fatalError()
+        }
+
+      case SendIntDirect(chan) =>
+        Scheduler.notifyAll(chan, Right(stack pop))
+
+      case SendIntIndirect(channelVar) =>
+        environment get channelVar match {
+          case Some(Left(chan)) => Scheduler.notifyAll(chan, Right(stack pop))
           case _ => fatalError()
         }
 

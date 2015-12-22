@@ -91,8 +91,12 @@ case class ReceiveIndirect(vc: Variable, n: Variable) extends Instruction
 //  * Variable Direct
 //  * Variable Indirect
 
-case class SendAtomDirect(c: Channel, a: Atom) extends Instruction
-case class SendAtomIndirect(vc: Variable, a: Atom) extends Instruction
+case class SendChannelDirect(c: Channel, a: Channel) extends Instruction
+case class SendChannelIndirect(vc: Variable, a: Channel) extends Instruction
+
+case class SendIntDirect(c: Channel) extends Instruction
+case class SendIntIndirect(vc: Variable) extends Instruction
+
 case class SendVariableDirect(c: Channel, v: Variable) extends Instruction
 case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 
