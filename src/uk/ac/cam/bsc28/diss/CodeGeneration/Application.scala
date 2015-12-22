@@ -1,19 +1,16 @@
 package uk.ac.cam.bsc28.diss.CodeGeneration
 
 import uk.ac.cam.bsc28.diss.FrontEnd.{ParseTree, Parser, Lexer}
+import uk.ac.cam.bsc28.diss.VM.Interpreter
 
 object Application extends App {
 
   val prog =
     """
-      |out @stdio(@c).
-      |out @stdio(1).
-      |out @stdio(Var).
-      |out Chan(@c).
-      |out Chan(1).
-      |out Chan(Var).
-      |in @stdio(X).
-      |in Chan(Y).
+      |(
+      | in @x(A) |
+      | out @x(@y)
+      |).
       |end
     """.stripMargin
 
@@ -24,7 +21,11 @@ object Application extends App {
   if (tree.nonEmpty) {
     println(tree.get)
     val gen = new CodeGenerator(tree.get)
-    println(gen.generate())
+    val prog = gen.generate()
+    println(prog)
+
+    val interp = new Interpreter(prog)
+    interp.run()
   } else {
     println("Parsing error!")
   }

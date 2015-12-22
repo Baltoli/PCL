@@ -54,7 +54,16 @@ class CodeGenerator(prog: Start) {
             List(ReceiveIndirect(Variable(vn), Variable(in)))
         }) ++ bytecodeForProcessAux(aux)
 
-      case ParallelProcess(left, right, aux) => List()
+      case ParallelProcess(left, right, aux) =>
+        val leftLabel = LabelGenerator.nextLabel()
+        val rightLabel = LabelGenerator.nextLabel()
+        val endLabel = LabelGenerator.nextLabel()
+
+        List(Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
+        List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(End()) ++
+        List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(End()) ++
+        List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
+
       case ReplicateProcess(proc, aux) => List()
       case IfProcess(left, right, proc, aux) => List()
       case LetProcess(name, value, proc, aux) => List()
