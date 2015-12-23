@@ -21,6 +21,8 @@ case class Push(value: Long) extends StackOperator
   * @param v The variable name to look for in the environment.
   */
 case class Load(v: Variable) extends Instruction
+case class StoreInt(v: Variable) extends Instruction
+case class StoreChannel(v: Variable, c: Channel) extends Instruction
 case class Add() extends StackOperator
 case class Subtract() extends StackOperator
 case class Multiply() extends StackOperator

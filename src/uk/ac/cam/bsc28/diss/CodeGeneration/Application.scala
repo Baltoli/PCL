@@ -7,11 +7,7 @@ object Application extends App {
 
   val prog =
     """
-      |(
-      | (in @x(A) | out @y(@y)) |
-      | (in @y(B) | out @x(@x))
-      |).
-      |end
+       |(in @c(X).out @b(X) | out @c(@d).in @b(Y))
     """.stripMargin
 
   val tokens = Lexer.tokenize(prog)

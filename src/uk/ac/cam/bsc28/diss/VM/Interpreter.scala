@@ -47,6 +47,12 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case _ => fatalError()
         }
 
+      case StoreInt(v) =>
+        environment += (v -> stack.pop)
+
+      case StoreChannel(v, c) =>
+        environment += (v -> c)
+
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
                           // and removing them from the program is a lot of work.
 

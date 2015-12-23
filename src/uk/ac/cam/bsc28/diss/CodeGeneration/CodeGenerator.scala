@@ -7,7 +7,7 @@ class CodeGenerator(prog: Start) {
 
   def generate(): List[Instruction] = {
     prog match {
-      case ProcessStart(proc) => bytecodeForProcess(proc)
+      case ProcessStart(proc) => bytecodeForProcess(proc) ++ List(End())
       case _ => List()
     }
   }
@@ -64,11 +64,18 @@ class CodeGenerator(prog: Start) {
         List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(End()) ++
         List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
 
-      case ReplicateProcess(proc, aux) => List()
+      case ReplicateProcess(proc, aux) =>
+        val procLabel = LabelGenerator.nextLabel()
+        val endLabel = LabelGenerator.nextLabel()
+
+        List(Spawn(procLabel), Jump(endLabel), Label(procLabel)) ++
+        bytecodeForProcess(proc) ++ List(Jump(procLabel), End(), Label(endLabel)) ++
+        bytecodeForProcessAux(aux)
+
       case IfProcess(left, right, proc, aux) => List()
       case LetProcess(name, value, proc, aux) => List()
 
-      case EndProcess() => List(End())
+      case EndProcess() => List()
     }
   }
 
