@@ -47,6 +47,12 @@ class Interpreter(p: List[Instruction]) extends Runnable {
           case _ => fatalError()
         }
 
+      case StoreInt(v) =>
+        environment += (v -> Right(stack.pop))
+
+      case StoreChannel(v, c) =>
+        environment += (v -> Left(c))
+
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
                           // and removing them from the program is a lot of work.
 
@@ -80,11 +86,22 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         }
         stack push (if (eq) 1 else 0)
 
+      case LoadAndCompareToChannel(n, c) =>
+        val eq = environment get n match {
+          case Some(Left(Channel(vcn))) =>
+            c match {
+              case Channel(cn) => cn == vcn
+              case _ => false
+            }
+          case _ => false
+        }
+        stack push (if (eq) 1 else 0)
+
       // In this case we don't need to look up anything in the
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.
-      case SendAtomDirect(chan, atom) =>
-        Scheduler.notifyAll(chan, atom)
+      case SendChannelDirect(chan, data) =>
+        Scheduler.notifyAll(chan, Left(data))
 
       // In this case we need to look up the environment for the
       // channel on which we are sending the atom. If we find an
@@ -95,9 +112,18 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // the only valid case for getting the channel is when we
       // have an entry in the environment (Some) and it is a channel
       // (Left).
-      case SendAtomIndirect(channelVar, atom) =>
+      case SendChannelIndirect(channelVar, data) =>
         environment get channelVar match {
-          case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
+          case Some(Left(chan)) => Scheduler.notifyAll(chan, Left(data))
+          case _ => fatalError()
+        }
+
+      case SendIntDirect(chan) =>
+        Scheduler.notifyAll(chan, Right(stack pop))
+
+      case SendIntIndirect(channelVar) =>
+        environment get channelVar match {
+          case Some(Left(chan)) => Scheduler.notifyAll(chan, Right(stack pop))
           case _ => fatalError()
         }
 

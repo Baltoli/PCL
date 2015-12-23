@@ -3,12 +3,12 @@ package uk.ac.cam.bsc28.diss.FrontEnd
 object ParseTree {
 
   // TODO: access modifiers for future usage
+  // FIXME: important - you've made arithmetic right associative you idiot
 
   trait Node
-  case class Program(prog: Process) extends Node
 
   trait Start extends Node
-  case class ProcessStart(proc: InternalProcess) extends Start
+  case class ProcessStart(proc: Process) extends Start
 
   trait Name extends Node
   case class VariableName(name: String) extends Name
@@ -27,111 +27,33 @@ object ParseTree {
   case class LiteralFactor(v: Long) extends Factor
 
   trait Term extends Node
-  case class FactorTerm(f: Factor) extends Term
-  case class OpTerm(l: Factor, op: MultiplyOperation, r: Term) extends Term
+  case class FactorAuxTerm(f: Factor, more: TermAux) extends Term
+  case class ParenthesisedExpressionTerm(e: Expression) extends Term
+
+  trait TermAux extends Node
+  case class OperatorTermAux(op: MultiplyOperation, f: Factor, more: TermAux) extends TermAux
+  case class EmptyTermAux() extends TermAux
 
   trait Expression extends Node
-  case class TermExpression(t: Term) extends Expression
-  case class OpExpression(l: Term, op: AddOperation, r: Expression) extends Expression
+  case class TermAuxExpression(t: Term, more: ExpressionAux) extends Expression
   case class ChannelExpression(c: ChannelName) extends Expression
 
-  trait InternalProcess extends Node
-  case class OutInternalProcess(chan: Name, expr: Expression, more: ProcessAux) extends InternalProcess
-  case class InInternalProcess(chan: Name, varName: VariableName, more: ProcessAux) extends InternalProcess
-  case class ParallelInternalProcess(left: InternalProcess, right: InternalProcess, more: ProcessAux) extends InternalProcess
-  case class ReplicateInternalProcess(proc: InternalProcess, more: ProcessAux) extends InternalProcess
-  case class IfInternalProcess(left: Expression, right: Expression, proc: InternalProcess, more: ProcessAux) extends InternalProcess
-  case class LetInternalProcess(name: VariableName, value: Expression, proc: InternalProcess, more: ProcessAux) extends InternalProcess
-  case class EndInternalProcess() extends InternalProcess
-  case class SequentialInternalProcess(first: InternalProcess, second: InternalProcess) extends InternalProcess
-
-  trait ProcessAux extends Node
-  case class SequentialProcessAux(proc: InternalProcess, more: ProcessAux) extends ProcessAux
-  case class EmptyProcessAux() extends ProcessAux
+  trait ExpressionAux extends Node
+  case class OperatorExpressionAux(op: AddOperation, t: Term, more: ExpressionAux) extends ExpressionAux
+  case class EmptyExpressionAux() extends ExpressionAux
 
   trait Process extends Node
-  case class OutProcess(chan: Name, expr: Expression) extends Process
-  case class InProcess(chan: Name, varName: VariableName) extends Process
-  case class ParallelProcess(left: Process, right: Process) extends Process
-  case class ReplicateProcess(proc: Process) extends Process
-  case class IfProcess(left: Expression, right: Expression, proc: Process) extends Process
-  case class LetProcess(name: VariableName, value: Expression, proc: Process) extends Process
-  case class SequentialProcess(first: Process, second: Process) extends Process
+  case class OutProcess(chan: Name, expr: Expression, more: ProcessAux) extends Process
+  case class InProcess(chan: Name, varName: VariableName, more: ProcessAux) extends Process
+  case class ParallelProcess(left: Process, right: Process, more: ProcessAux) extends Process
+  case class ReplicateProcess(proc: Process, more: ProcessAux) extends Process
+  case class IfProcess(left: Expression, right: Expression, proc: Process, more: ProcessAux) extends Process
+  case class LetProcess(name: VariableName, value: Expression, proc: Process, more: ProcessAux) extends Process
   case class EndProcess() extends Process
+  case class SequentialProcess(first: Process, second: Process) extends Process
 
-  def getAST(tree: Node): Option[Program] = {
-    rebalance(tree) match {
-      case ProcessStart(proc) => Some(Program(internalToExternal(proc)))
-      case _ => None
-    }
-  }
-
-  private def internalToExternal(tree: InternalProcess): Process = {
-    tree match {
-      case OutInternalProcess(chan, expr, more) => OutProcess(chan, expr)
-      case InInternalProcess(chan, varName, more) => InProcess(chan, varName)
-      case ParallelInternalProcess(left, right, more) =>
-        ParallelProcess(internalToExternal(left), internalToExternal(right))
-      case ReplicateInternalProcess(proc, more) =>
-        ReplicateProcess(internalToExternal(proc))
-      case IfInternalProcess(left, right, proc, more) =>
-        IfProcess(left, right, internalToExternal(proc))
-      case LetInternalProcess(name, value, proc, more) =>
-        LetProcess(name, value, internalToExternal(proc))
-      case EndInternalProcess() => EndProcess()
-      case SequentialInternalProcess(first, second) =>
-        SequentialProcess(internalToExternal(first), internalToExternal(second))
-    }
-  }
-
-  private def rebalance(tree: Node): Node = {
-    tree match {
-      case ProcessStart(p) =>
-        ProcessStart(rebalanceProcess(p))
-
-      case _ => tree
-    }
-  }
-
-  private def rebalanceProcess(tree: InternalProcess): InternalProcess = {
-    tree match {
-      case InInternalProcess(_, _, aux) => sequenceIfNeeded(tree, aux)
-
-      case OutInternalProcess(_, _, aux) => sequenceIfNeeded(tree, aux)
-
-      case ParallelInternalProcess(l, r, aux) =>
-        val lb = rebalanceProcess(l)
-        val rb = rebalanceProcess(r)
-        sequenceIfNeeded(ParallelInternalProcess(lb, rb, aux), aux)
-
-      case ReplicateInternalProcess(p, aux) =>
-        val pb = rebalanceProcess(p)
-        sequenceIfNeeded(ReplicateInternalProcess(pb, aux), aux)
-
-      case IfInternalProcess(l, r, p, aux) =>
-        val pb = rebalanceProcess(p)
-        sequenceIfNeeded(IfInternalProcess(l, r, pb, aux), aux)
-
-      case LetInternalProcess(v, e, p, aux) =>
-        val pb = rebalanceProcess(p)
-        sequenceIfNeeded(LetInternalProcess(v, e, pb, aux), aux)
-
-      case _ => tree
-    }
-  }
-
-  private def sequenceIfNeeded(proc: InternalProcess, aux: ProcessAux) = {
-    processFromAux(aux) match {
-      case Some(next) => SequentialInternalProcess(proc, rebalanceProcess(next))
-      case None => proc
-    }
-  }
-
-  private def processFromAux(aux: ProcessAux): Option[InternalProcess] = {
-    aux match {
-      case SequentialProcessAux(proc, _) => Some(proc)
-      case EmptyProcessAux() => None
-    }
-  }
+  trait ProcessAux extends Node
+  case class SequentialProcessAux(proc: Process, more: ProcessAux) extends ProcessAux
+  case class EmptyProcessAux() extends ProcessAux
 
 }

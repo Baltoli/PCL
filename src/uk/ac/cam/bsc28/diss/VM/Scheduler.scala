@@ -30,9 +30,11 @@ object Scheduler {
   // the choice of strategy can affect execution of programs).
   def notifyAll(c: Channel, v: Atom): Unit = {
     var sent = false
-    all foreach { i =>
-      if (!sent) {
-        if (i receive(c, v)) sent = true
+    while (!sent) {
+      all foreach { i =>
+        if (!sent) {
+          if (i receive(c, v)) sent = true
+        }
       }
     }
   }

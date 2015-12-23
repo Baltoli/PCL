@@ -21,6 +21,8 @@ case class Push(value: Long) extends StackOperator
   * @param v The variable name to look for in the environment.
   */
 case class Load(v: Variable) extends Instruction
+case class StoreInt(v: Variable) extends Instruction
+case class StoreChannel(v: Variable, c: Channel) extends Instruction
 case class Add() extends StackOperator
 case class Subtract() extends StackOperator
 case class Multiply() extends StackOperator
@@ -31,6 +33,7 @@ case class CompareZero() extends StackOperator
 // What we want this to do ultimately is compare the underlying
 // channel beneath two variables - i.e. env[n] == env[m].
 case class LoadAndCompareAtom(n: Variable, m: Variable) extends Instruction
+case class LoadAndCompareToChannel(n: Variable, c: Channel) extends Instruction
 
 // could labels be a better type? Not critical but maybe good
 case class Label(s: String) extends Instruction
@@ -91,8 +94,12 @@ case class ReceiveIndirect(vc: Variable, n: Variable) extends Instruction
 //  * Variable Direct
 //  * Variable Indirect
 
-case class SendAtomDirect(c: Channel, a: Atom) extends Instruction
-case class SendAtomIndirect(vc: Variable, a: Atom) extends Instruction
+case class SendChannelDirect(c: Channel, a: Channel) extends Instruction
+case class SendChannelIndirect(vc: Variable, a: Channel) extends Instruction
+
+case class SendIntDirect(c: Channel) extends Instruction
+case class SendIntIndirect(vc: Variable) extends Instruction
+
 case class SendVariableDirect(c: Channel, v: Variable) extends Instruction
 case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 
