@@ -48,10 +48,10 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         }
 
       case StoreInt(v) =>
-        environment += (v -> stack.pop)
+        environment += (v -> Right(stack.pop))
 
       case StoreChannel(v, c) =>
-        environment += (v -> c)
+        environment += (v -> Left(c))
 
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
                           // and removing them from the program is a lot of work.

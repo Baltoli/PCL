@@ -73,7 +73,14 @@ class CodeGenerator(prog: Start) {
         bytecodeForProcessAux(aux)
 
       case IfProcess(left, right, proc, aux) => List()
-      case LetProcess(name, value, proc, aux) => List()
+      case LetProcess(VariableName(vn), expr, proc, aux) =>
+        expr match {
+          case ChannelExpression(ChannelName(cn)) =>
+            List(StoreChannel(Variable(vn), Channel(cn)))
+
+          case _ =>
+            bytecodeForExpression(expr) ++ List(StoreInt(Variable(vn)))
+        }
 
       case EndProcess() => List()
     }
@@ -90,42 +97,47 @@ class CodeGenerator(prog: Start) {
 
   def bytecodeForExpression(e: Expression): List[Instruction] = {
     e match {
-      case _ => List()
-    }
-        /*
-      case TermExpression(t) =>
-        bytecodeForTerm(t)
+      case TermAuxExpression(t, more) =>
+        bytecodeForTerm(t) ++ bytecodeForExpressionAux(more)
 
-      case OpExpression(l, op, r) =>
-        val lCode = bytecodeForTerm(l)
-        val operatorCode = List(op match {
+      case ChannelExpression(c) => List() // TODO: an error
+    }
+  }
+
+  def bytecodeForExpressionAux(aux: ExpressionAux): List[Instruction] = {
+    aux match {
+      case OperatorExpressionAux(op, t, more) =>
+        val opInstruction = List(op match {
           case AddNode() => Add()
           case SubtractNode() => Subtract()
         })
-        val rCode = bytecodeForExpression(r)
-        lCode ++ rCode ++ operatorCode
+        bytecodeForTerm(t) ++ opInstruction ++ bytecodeForExpressionAux(more)
 
-      case ChannelExpression(c) => List() // TODO: this is an error
-    }*/
+      case EmptyExpressionAux() => List()
+    }
   }
 
   def bytecodeForTerm(t: Term): List[Instruction] = {
     t match {
-      case _ => List()
-    }
-        /*
-      case FactorTerm(f) =>
-        bytecodeForFactor(f)
+      case FactorAuxTerm(f, more) =>
+        bytecodeForFactor(f) ++ bytecodeForTermAux(more)
 
-      case OpTerm(l, op, r) =>
-        val lCode = bytecodeForFactor(l)
-        val operatorCode = List(op match {
+      case ParenthesisedExpressionTerm(e) =>
+        bytecodeForExpression(e)
+    }
+  }
+
+  def bytecodeForTermAux(aux: TermAux): List[Instruction] = {
+    aux match {
+      case OperatorTermAux(op, f, more) =>
+        val opInstruction = List(op match {
           case MultiplyNode() => Multiply()
           case DivideNode() => Divide()
         })
-        val rCode = bytecodeForTerm(r)
-        lCode ++ rCode ++ operatorCode
-    }*/
+        bytecodeForFactor(f) ++ opInstruction ++ bytecodeForTermAux(more)
+
+      case EmptyTermAux() => List()
+    }
   }
 
   def bytecodeForFactor(f: Factor): List[Instruction] = {

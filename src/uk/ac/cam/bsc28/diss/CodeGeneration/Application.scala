@@ -7,7 +7,7 @@ object Application extends App {
 
   val prog =
     """
-       |(in @c(X).out @b(X) | out @c(@d).in @b(Y))
+       |(out @stdio(10 - (2 + 5*7) + 3) | in @stdio(Z))
     """.stripMargin
 
   val tokens = Lexer.tokenize(prog)
