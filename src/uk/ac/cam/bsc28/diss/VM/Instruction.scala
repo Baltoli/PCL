@@ -33,6 +33,7 @@ case class CompareZero() extends StackOperator
 // What we want this to do ultimately is compare the underlying
 // channel beneath two variables - i.e. env[n] == env[m].
 case class LoadAndCompareAtom(n: Variable, m: Variable) extends Instruction
+case class LoadAndCompareToChannel(n: Variable, c: Channel) extends Instruction
 
 // could labels be a better type? Not critical but maybe good
 case class Label(s: String) extends Instruction

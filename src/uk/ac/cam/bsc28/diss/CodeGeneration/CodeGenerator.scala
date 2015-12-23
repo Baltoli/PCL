@@ -5,6 +5,21 @@ import uk.ac.cam.bsc28.diss.VM._
 
 class CodeGenerator(prog: Start) {
 
+  private object JustVar {
+    def apply(name: String) =
+      TermAuxExpression(FactorAuxTerm(VariableFactor(VariableName(name)), EmptyTermAux()), EmptyExpressionAux())
+
+    def unapply(e: Expression): Option[String] = {
+      e match {
+        case
+          TermAuxExpression(FactorAuxTerm(VariableFactor(VariableName(name)), EmptyTermAux()), EmptyExpressionAux()) =>
+          Some(name)
+
+        case _ => None
+      }
+    }
+  }
+
   def generate(): List[Instruction] = {
     prog match {
       case ProcessStart(proc) => bytecodeForProcess(proc) ++ List(End())
@@ -22,20 +37,10 @@ class CodeGenerator(prog: Start) {
           case (VariableName(vn), ChannelExpression(ChannelName(data))) =>
             List(SendChannelIndirect(Variable(vn), Channel(data)))
 
-          case (ChannelName(cn), TermAuxExpression(
-                                    FactorAuxTerm(
-                                      VariableFactor(VariableName(data)),
-                                      EmptyTermAux()
-                                    ),
-                                    EmptyExpressionAux())) =>
+          case (ChannelName(cn), JustVar(data)) =>
             List(SendVariableDirect(Channel(cn), Variable(data)))
 
-          case (VariableName(vn), TermAuxExpression(
-                                    FactorAuxTerm(
-                                      VariableFactor(VariableName(data)),
-                                      EmptyTermAux()
-                                    ),
-                                    EmptyExpressionAux())) =>
+          case (VariableName(vn), JustVar(data)) =>
             List(SendVariableIndirect(Variable(vn), Variable(data)))
 
           case (ChannelName(cn), e) =>
@@ -72,17 +77,57 @@ class CodeGenerator(prog: Start) {
         bytecodeForProcess(proc) ++ List(Jump(procLabel), End(), Label(endLabel)) ++
         bytecodeForProcessAux(aux)
 
-      case IfProcess(left, right, proc, aux) => List()
+      /*
+       * Cases to consider here:
+       *
+       * -  Two channels can be handled by just pushing a
+       *    constant 0/1 to the stack.
+       * -  Add a new instruction for variable / channel
+       *    comparison that loads the variable, checks
+       *    equality, then pushes a value.
+       * -  For any other cases, if we have a channel expression
+       *    then it is an error.
+       * -  We have a specialised instruction for two variables.
+       * -  Anything else, we just run each expression separately,
+       *    then a subtract and compare to zero.
+       */
+      case IfProcess(left, right, proc, aux) =>
+        val endLabel = LabelGenerator.nextLabel()
+
+        ((left, right) match {
+          case (ChannelExpression(ChannelName(lc)), ChannelExpression(ChannelName(rc))) =>
+            List(if (lc == rc) {
+              Push(1)
+            } else {
+              Push(0)
+            }) ++ List(JumpIfZero(endLabel))
+
+          case (ChannelExpression(ChannelName(c)), JustVar(v)) =>
+            List(LoadAndCompareToChannel(Variable(v), Channel(c)), JumpIfZero(endLabel))
+
+          case (JustVar(v), ChannelExpression(ChannelName(c))) =>
+            List(LoadAndCompareToChannel(Variable(v), Channel(c)), JumpIfZero(endLabel))
+
+          case (JustVar(lv), JustVar(rv)) =>
+            List(LoadAndCompareAtom(Variable(lv), Variable(rv)), JumpIfZero(endLabel))
+
+          case (ChannelExpression(_), _) | (_, ChannelExpression(_)) => List() // TODO: error
+
+          case _ =>
+            bytecodeForExpression(left) ++ bytecodeForExpression(right) ++
+            List(Subtract(), JumpIfNonZero(endLabel))
+        }) ++ bytecodeForProcess(proc) ++ List(End(), Label(endLabel)) ++ bytecodeForProcessAux(aux)
+
       case LetProcess(VariableName(vn), expr, proc, aux) =>
-        expr match {
+        (expr match {
           case ChannelExpression(ChannelName(cn)) =>
             List(StoreChannel(Variable(vn), Channel(cn)))
 
           case _ =>
             bytecodeForExpression(expr) ++ List(StoreInt(Variable(vn)))
-        }
+        }) ++ bytecodeForProcess(proc) ++ bytecodeForProcessAux(aux)
 
-      case EndProcess() => List()
+      case EndProcess() => List(End())
     }
   }
 

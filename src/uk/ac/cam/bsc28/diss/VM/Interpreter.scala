@@ -86,6 +86,17 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         }
         stack push (if (eq) 1 else 0)
 
+      case LoadAndCompareToChannel(n, c) =>
+        val eq = environment get n match {
+          case Some(Left(Channel(vcn))) =>
+            c match {
+              case Channel(cn) => cn == vcn
+              case _ => false
+            }
+          case _ => false
+        }
+        stack push (if (eq) 1 else 0)
+
       // In this case we don't need to look up anything in the
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.
