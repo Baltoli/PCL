@@ -1,8 +1,9 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import uk.ac.cam.bsc28.diss.FrontEnd.ExternProcessor.ExternChannel
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-class Interpreter(p: List[Instruction]) extends Runnable {
+class Interpreter(program: List[Instruction], externs: List[ExternChannel]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
@@ -14,7 +15,10 @@ class Interpreter(p: List[Instruction]) extends Runnable {
     * all the interpreters refer to it. This works because the
     * sequence is never actually modified.
     */
-  val program: List[Instruction] = p
+  val loader = new ExternLoader()
+  externs foreach { e =>
+    val chan = loader.loadClassNamed(e.c)
+  }
 
   /**
     * The interpreter environment maps _variables_ to either atoms
@@ -30,7 +34,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
   Scheduler.register(this)
 
   def copy(): Interpreter = {
-    val interpreter = new Interpreter(program)
+    val interpreter = new Interpreter(program, externs)
     interpreter.environment = environment
     interpreter.labels = labels
     interpreter

@@ -18,6 +18,6 @@ object Application extends App {
   Print(),
   End()
   )
-  val i = new Interpreter(p)
+  val i = new Interpreter(p, List())
   i.run()
 }
