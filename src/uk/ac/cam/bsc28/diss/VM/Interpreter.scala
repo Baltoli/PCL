@@ -1,9 +1,9 @@
 package uk.ac.cam.bsc28.diss.VM
 
-import uk.ac.cam.bsc28.diss.FrontEnd.ExternProcessor.ExternChannel
+import uk.ac.cam.bsc28.diss.VM.ExternLoader.ChannelCallable
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-class Interpreter(program: List[Instruction], externs: List[ExternChannel]) extends Runnable {
+class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallable]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
@@ -15,10 +15,6 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
     * all the interpreters refer to it. This works because the
     * sequence is never actually modified.
     */
-  val loader = new ExternLoader()
-  externs foreach { e =>
-    val chan = loader.loadClassNamed(e.c)
-  }
 
   /**
     * The interpreter environment maps _variables_ to either atoms
@@ -30,8 +26,6 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
   var programCounter = 0
 
   var blocked: Option[Pair[Channel, Variable]] = None
-
-  Scheduler.register(this)
 
   def copy(): Interpreter = {
     val interpreter = new Interpreter(program, externs)
@@ -73,11 +67,7 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
         programCounter = -1
 
       case Spawn(s) =>
-        val newInterpreter = copy()
-        newInterpreter.programCounter = labels(s)
-        Scheduler.runInNewThread { _ =>
-          newInterpreter.run()
-        }
+        Scheduler.spawn(this, labels(s))
 
       case LoadAndCompareAtom(n,m) =>
         val eq = environment get m map { ma =>
@@ -105,7 +95,13 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.
       case SendChannelDirect(chan, data) =>
-        Scheduler.notifyAll(chan, Left(data))
+        val maybe = externs.get(chan.n)
+        if (maybe.isEmpty) {
+          Scheduler.notifyAll(chan, Left(data))
+        } else {
+          val callable = maybe.get
+          callable.receive(Left(data.n))
+        }
 
       // In this case we need to look up the environment for the
       // channel on which we are sending the atom. If we find an
@@ -118,16 +114,39 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
       // (Left).
       case SendChannelIndirect(channelVar, data) =>
         environment get channelVar match {
-          case Some(Left(chan)) => Scheduler.notifyAll(chan, Left(data))
+          case Some(Left(chan)) =>
+            val maybe = externs.get(chan.n)
+            if (maybe.isEmpty) {
+              Scheduler.notifyAll(chan, Left(data))
+            } else {
+              val callable = maybe.get
+              callable.receive(Left(data.n))
+            }
           case _ => fatalError()
         }
 
       case SendIntDirect(chan) =>
-        Scheduler.notifyAll(chan, Right(stack pop))
+        val maybe = externs.get(chan.n)
+        val data = stack.pop
+        if (maybe.isEmpty) {
+          Scheduler.notifyAll(chan, Right(data))
+        } else {
+          val callable = maybe.get
+          callable.receive(Right(data))
+        }
 
       case SendIntIndirect(channelVar) =>
         environment get channelVar match {
-          case Some(Left(chan)) => Scheduler.notifyAll(chan, Right(stack pop))
+          case Some(Left(chan)) =>
+            val maybe = externs.get(chan.n)
+            val data = stack.pop
+            if (maybe.isEmpty) {
+              Scheduler.notifyAll(chan, Right(data))
+            } else {
+              val callable = maybe.get
+              callable.receive(Right(data))
+            }
+
           case _ => fatalError()
         }
 
@@ -139,7 +158,16 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
       case SendVariableDirect(chan, varName) =>
         environment get varName match {
           case Some(atom) =>
-            Scheduler.notifyAll(chan, atom)
+            val maybe = externs.get(chan.n)
+            if (maybe.isEmpty) {
+              Scheduler.notifyAll(chan, atom)
+            } else {
+              val callable = maybe.get
+              callable.receive(atom match {
+                case Left(a) => Left(a.n)
+                case Right(b) => Right(b)
+              })
+            }
           case None =>
             fatalError()
         }
@@ -151,7 +179,17 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
         environment get varName match {
           case Some(atom) =>
             environment get channelVar match {
-              case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
+              case Some(Left(chan)) =>
+                val maybe = externs.get(chan.n)
+                if (maybe.isEmpty) {
+                  Scheduler.notifyAll(chan, atom)
+                } else {
+                  val callable = maybe.get
+                  callable.receive(atom match {
+                    case Left(a) => Left(a.n)
+                    case Right(b) => Right(b)
+                  })
+                }
               case _ => fatalError()
             }
           case None =>
@@ -162,8 +200,18 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
       // form a blocking pair, so we can just update `blocked` and call
       // a synchronized wait.
       case ReceiveDirect(c, n) =>
-        blocked = Some((c,n))
-        this synchronized wait
+        val maybe = externs.get(c.n)
+        if (maybe.isEmpty) {
+          blocked = Some((c,n))
+          this synchronized wait
+        } else {
+          val callable = maybe.get
+          val data = callable.send() match {
+            case Left(a) => Left(Channel(a))
+            case Right(b) => Right(b)
+          }
+          environment += (n -> data)
+        }
 
       // Similar to above, but we need to also look up the channel stored
       // in the variable before we can block on it. Fatal error if no such
@@ -171,8 +219,18 @@ class Interpreter(program: List[Instruction], externs: List[ExternChannel]) exte
       case ReceiveIndirect(vc, n) =>
         environment get vc match {
           case Some(Left(chan)) =>
-            blocked = Some((chan, n))
-            this synchronized wait
+            val maybe = externs.get(chan.n)
+            if (maybe.isEmpty) {
+              blocked = Some((chan, n))
+              this synchronized wait
+            } else {
+              val callable = maybe.get
+              val data = callable.send() match {
+                case Left(a) => Left(Channel(a))
+                case Right(b) => Right(b)
+              }
+              environment += (n -> data)
+            }
           case _ =>
             fatalError()
         }

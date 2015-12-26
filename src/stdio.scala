@@ -1,7 +1,13 @@
 class stdio {
 
   def send(): Either[String, Long] = {
-    Left("channel")
+    val text = readLine("> ")
+    try {
+      val intValue = text.toLong
+      Right(intValue)
+    } catch {
+      case e: NumberFormatException => Left(text)
+    }
   }
 
   def receive(data: Either[String, Long]) = {

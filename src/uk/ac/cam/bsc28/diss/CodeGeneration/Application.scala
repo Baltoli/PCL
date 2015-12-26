@@ -9,29 +9,12 @@ object Application extends App {
     """
        |external @stdio
        |
-       |let X = @c {
+       |let X = 0 {
        |  [@c = X] {
        |    out @stdio(0)
        |  }.
        |  ( out @c(0) | in @c(X) )
        |}
     """.stripMargin
-
-  val (externs, source) = ExternProcessor.preprocessSource(prog)
-  val tokens = Lexer.tokenize(source)
-  val parser = new Parser(tokens)
-  val tree = parser.parse()
-
-  if (tree.nonEmpty) {
-    println(tree.get)
-    val gen = new CodeGenerator(tree.get)
-    val bytecode = gen.generate()
-    println(bytecode)
-
-    val interp = new Interpreter(bytecode, externs)
-    interp.run()
-  } else {
-    println("Parsing error!")
-  }
 
 }
