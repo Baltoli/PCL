@@ -10,9 +10,14 @@ object Application extends App {
     """
       |external @stdio
       |
-      |in @stdio(Y).
-      |in @stdio(X).
-      |out @stdio(X * Y)
+      |let Pass = @password {
+      | in @stdio(Chan).
+      | [Chan = Pass] {
+      |     out @stdio(@welcome).
+      |     end
+      | }.
+      | out @stdio(@go_away)
+      |}
     """.stripMargin
 
   val (externs, source) = ExternProcessor.preprocessSource(prog)

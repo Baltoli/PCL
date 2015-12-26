@@ -235,7 +235,6 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
             fatalError()
         }
 
-      // TODO: read and print can't be primitives - need to allow dereferencing them.
       //       note that this approach will also allow possible extension functionality
       //       - for example, providing a method loading approach allowing for externally
       //       provided atoms that run specified code on send / receive? Might need a bit
@@ -250,17 +249,6 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
       //       would be to have syntax like `extern @chan` which will cause the interpreter
       //       to redirect in / out statements to `@chan` to external code with a given
       //       interface.
-      case Read(n) =>
-        val line = readLine("> ")
-        try {
-          val longValue = line.toLong
-          environment += (n -> Right(longValue))
-        } catch {
-          case e: NumberFormatException => environment += (n -> Left(Channel(line)))
-        }
-
-      case Print() => println(stack.peek)
-
       case Let(vn, a) =>
         environment += (vn -> a)
 

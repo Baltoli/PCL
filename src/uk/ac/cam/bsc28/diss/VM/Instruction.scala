@@ -113,6 +113,3 @@ case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 // binding an Atom to a Variable. We do still need a scope deletion instruction.
 case class Let(vn: Variable, a: Atom) extends Instruction
 case class Delete(vn: Variable) extends Instruction
-
-case class Read(vn: Variable) extends Instruction
-case class Print() extends Instruction
