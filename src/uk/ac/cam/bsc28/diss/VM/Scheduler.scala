@@ -11,13 +11,14 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
     e.c -> loader.loadClassNamed(e.c)
   }
 
-  def spawn(pc: Int): Unit = {
+  def spawn(pc: Int, env: Map[Variable, Atom]): Unit = {
     val instances = classes.map { c =>
       c._1 -> loader.newInstance(c._2)
     }
 
     val interp = new Interpreter(prog, Map() ++ instances)
     interp.programCounter = pc
+    interp.environment = env
     Scheduler.register(interp, this)
 
     Scheduler.runInNewThread { _ =>
@@ -30,6 +31,7 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
 object Scheduler {
 
   var all = Map[Interpreter, Scheduler]()
+  var semaphores = Map[String, (Interpreter, Int)]()
 
   def runInNewThread(f: Unit => Unit): Unit = {
     new Thread {
@@ -47,8 +49,30 @@ object Scheduler {
 
   def spawn(interp: Interpreter, pc: Int): Unit = {
     all.get(interp) match {
-      case Some(s) => s.spawn(pc)
+      case Some(s) => s.spawn(pc, interp.environment)
       case None => println("Bad bad unregistered interpreter.")
+    }
+  }
+
+  def parallelGuard(interp: Interpreter, label: String, count: Int): Unit = {
+    semaphores synchronized {
+      semaphores += (label -> (interp, count))
+    }
+  }
+
+  def threadDone(label: String): Unit = {
+    semaphores synchronized {
+      val maybe = semaphores.get(label)
+      if (maybe.nonEmpty) {
+        val (interp, count) = maybe.get
+        if (count == 1) {
+          interp synchronized interp.notifyAll()
+        } else {
+          semaphores += (label -> (interp, count - 1))
+        }
+      } else {
+        println("Threads done on nonexistent label...") // TODO: error
+      }
     }
   }
 

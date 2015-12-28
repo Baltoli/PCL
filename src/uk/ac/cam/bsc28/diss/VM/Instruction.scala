@@ -23,6 +23,8 @@ case class Push(value: Long) extends StackOperator
 case class Load(v: Variable) extends Instruction
 case class StoreInt(v: Variable) extends Instruction
 case class StoreChannel(v: Variable, c: Channel) extends Instruction
+case class CopyVariable(v: Variable, dv: Variable) extends Instruction
+
 case class Add() extends StackOperator
 case class Subtract() extends StackOperator
 case class Multiply() extends StackOperator
@@ -113,3 +115,14 @@ case class SendVariableIndirect(vc: Variable, v: Variable) extends Instruction
 // binding an Atom to a Variable. We do still need a scope deletion instruction.
 case class Let(vn: Variable, a: Atom) extends Instruction
 case class Delete(vn: Variable) extends Instruction
+
+/*
+ * We will use these instructions to perform parallel synchronisation between threads. Before
+ * the interpreter begins parallel work, it will run a ParallelGuard instruction with a unique
+ * label and a count. The interpreter effect of executing this instruction is essentially to
+ * instantiate a semaphore with the given count. The interpreter will then wait until the
+ * scheduler notifies it (when the final ThreadDone instruction is executed; decrementing the
+ * semaphore value to 0).
+ */
+case class ParallelGuard(label: String, count: Int) extends Instruction
+case class ThreadDone(label: String) extends Instruction

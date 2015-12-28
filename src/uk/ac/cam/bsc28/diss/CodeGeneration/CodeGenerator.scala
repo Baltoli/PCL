@@ -63,10 +63,11 @@ class CodeGenerator(prog: Start) {
         val leftLabel = LabelGenerator.nextLabel()
         val rightLabel = LabelGenerator.nextLabel()
         val endLabel = LabelGenerator.nextLabel()
+        val guardLabel = LabelGenerator.nextLabel()
 
-        List(Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
-        List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(End()) ++
-        List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(End()) ++
+        List(Spawn(leftLabel), Spawn(rightLabel), ParallelGuard(guardLabel, 2), Jump(endLabel)) ++
+        List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(ThreadDone(guardLabel), End()) ++
+        List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(ThreadDone(guardLabel), End()) ++
         List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
 
       case ReplicateProcess(proc, aux) =>
@@ -123,9 +124,14 @@ class CodeGenerator(prog: Start) {
           case ChannelExpression(ChannelName(cn)) =>
             List(StoreChannel(Variable(vn), Channel(cn)))
 
+          case JustVar(data) =>
+            List(CopyVariable(Variable(vn), Variable(data)))
+
           case _ =>
             bytecodeForExpression(expr) ++ List(StoreInt(Variable(vn)))
-        }) ++ bytecodeForProcess(proc) ++ bytecodeForProcessAux(aux)
+        }) ++
+          bytecodeForProcess(proc) ++ List(Delete(Variable(vn))) ++
+          bytecodeForProcessAux(aux)
 
       case EndProcess() => List(End())
     }

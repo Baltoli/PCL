@@ -51,6 +51,9 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
       case StoreChannel(v, c) =>
         environment += (v -> Left(c))
 
+      case CopyVariable(dest, data) =>
+        environment += (dest -> environment(data))
+
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
                           // and removing them from the program is a lot of work.
 
@@ -253,6 +256,13 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
         environment += (vn -> a)
 
       case Delete(vn) => environment -= vn
+
+      case ParallelGuard(label, count) =>
+        Scheduler.parallelGuard(this, label, count)
+        this synchronized wait
+
+      case ThreadDone(label) =>
+        Scheduler.threadDone(label)
     }
   }
 

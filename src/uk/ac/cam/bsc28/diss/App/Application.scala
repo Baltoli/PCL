@@ -6,17 +6,22 @@ import uk.ac.cam.bsc28.diss.VM.{Scheduler, Interpreter}
 
 object Application extends App {
 
-  val prog =
+  val prog = // TODO: synchronisation - shouldn't print welcome until parallel terminates
     """
       |external @stdio
       |
-      |let Pass = @password {
-      | in @stdio(Chan).
-      | [Chan = Pass] {
+      |out @stdio(@enter_password).
+      |in @stdio(Userpass).
+      |let Pass = Userpass {
+      | !(
+      |   in @stdio(Chan).
+      |   [Chan = Pass] {
       |     out @stdio(@welcome).
       |     end
-      | }.
-      | out @stdio(@go_away)
+      |   }.
+      |   out @stdio(@password_is_not).
+      |   out @stdio(Chan)
+      | )
       |}
     """.stripMargin
 
@@ -33,7 +38,7 @@ object Application extends App {
 
     val sched = new Scheduler(bytecode, externs)
 
-    sched.spawn(0)
+    sched.spawn(0, Map())
   } else {
     println("Parsing error!")
   }
