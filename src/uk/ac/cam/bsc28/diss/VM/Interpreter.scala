@@ -1,8 +1,9 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import uk.ac.cam.bsc28.diss.VM.ExternLoader.ChannelCallable
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-class Interpreter(p: List[Instruction]) extends Runnable {
+class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallable]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
@@ -14,7 +15,6 @@ class Interpreter(p: List[Instruction]) extends Runnable {
     * all the interpreters refer to it. This works because the
     * sequence is never actually modified.
     */
-  val program: List[Instruction] = p
 
   /**
     * The interpreter environment maps _variables_ to either atoms
@@ -27,10 +27,8 @@ class Interpreter(p: List[Instruction]) extends Runnable {
 
   var blocked: Option[Pair[Channel, Variable]] = None
 
-  Scheduler.register(this)
-
   def copy(): Interpreter = {
-    val interpreter = new Interpreter(program)
+    val interpreter = new Interpreter(program, externs)
     interpreter.environment = environment
     interpreter.labels = labels
     interpreter
@@ -53,6 +51,9 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case StoreChannel(v, c) =>
         environment += (v -> Left(c))
 
+      case CopyVariable(dest, data) =>
+        environment += (dest -> environment(data))
+
       case Label(s) => () // Do nothing when we see a label - we've already extracted them,
                           // and removing them from the program is a lot of work.
 
@@ -69,11 +70,7 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         programCounter = -1
 
       case Spawn(s) =>
-        val newInterpreter = copy()
-        newInterpreter.programCounter = labels(s)
-        Scheduler.runInNewThread { _ =>
-          newInterpreter.run()
-        }
+        Scheduler.spawn(this, labels(s))
 
       case LoadAndCompareAtom(n,m) =>
         val eq = environment get m map { ma =>
@@ -101,7 +98,13 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // environment, so we can just directly notify the thread
       // manager with the atom being sent.
       case SendChannelDirect(chan, data) =>
-        Scheduler.notifyAll(chan, Left(data))
+        val maybe = externs.get(chan.n)
+        if (maybe.isEmpty) {
+          Scheduler.notifyAll(chan, Left(data))
+        } else {
+          val callable = maybe.get
+          callable.receive(Left(data.n))
+        }
 
       // In this case we need to look up the environment for the
       // channel on which we are sending the atom. If we find an
@@ -114,16 +117,39 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // (Left).
       case SendChannelIndirect(channelVar, data) =>
         environment get channelVar match {
-          case Some(Left(chan)) => Scheduler.notifyAll(chan, Left(data))
+          case Some(Left(chan)) =>
+            val maybe = externs.get(chan.n)
+            if (maybe.isEmpty) {
+              Scheduler.notifyAll(chan, Left(data))
+            } else {
+              val callable = maybe.get
+              callable.receive(Left(data.n))
+            }
           case _ => fatalError()
         }
 
       case SendIntDirect(chan) =>
-        Scheduler.notifyAll(chan, Right(stack pop))
+        val maybe = externs.get(chan.n)
+        val data = stack.pop
+        if (maybe.isEmpty) {
+          Scheduler.notifyAll(chan, Right(data))
+        } else {
+          val callable = maybe.get
+          callable.receive(Right(data))
+        }
 
       case SendIntIndirect(channelVar) =>
         environment get channelVar match {
-          case Some(Left(chan)) => Scheduler.notifyAll(chan, Right(stack pop))
+          case Some(Left(chan)) =>
+            val maybe = externs.get(chan.n)
+            val data = stack.pop
+            if (maybe.isEmpty) {
+              Scheduler.notifyAll(chan, Right(data))
+            } else {
+              val callable = maybe.get
+              callable.receive(Right(data))
+            }
+
           case _ => fatalError()
         }
 
@@ -135,7 +161,16 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case SendVariableDirect(chan, varName) =>
         environment get varName match {
           case Some(atom) =>
-            Scheduler.notifyAll(chan, atom)
+            val maybe = externs.get(chan.n)
+            if (maybe.isEmpty) {
+              Scheduler.notifyAll(chan, atom)
+            } else {
+              val callable = maybe.get
+              callable.receive(atom match {
+                case Left(a) => Left(a.n)
+                case Right(b) => Right(b)
+              })
+            }
           case None =>
             fatalError()
         }
@@ -147,7 +182,17 @@ class Interpreter(p: List[Instruction]) extends Runnable {
         environment get varName match {
           case Some(atom) =>
             environment get channelVar match {
-              case Some(Left(chan)) => Scheduler.notifyAll(chan, atom)
+              case Some(Left(chan)) =>
+                val maybe = externs.get(chan.n)
+                if (maybe.isEmpty) {
+                  Scheduler.notifyAll(chan, atom)
+                } else {
+                  val callable = maybe.get
+                  callable.receive(atom match {
+                    case Left(a) => Left(a.n)
+                    case Right(b) => Right(b)
+                  })
+                }
               case _ => fatalError()
             }
           case None =>
@@ -158,8 +203,18 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       // form a blocking pair, so we can just update `blocked` and call
       // a synchronized wait.
       case ReceiveDirect(c, n) =>
-        blocked = Some((c,n))
-        this synchronized wait
+        val maybe = externs.get(c.n)
+        if (maybe.isEmpty) {
+          blocked = Some((c,n))
+          this synchronized wait
+        } else {
+          val callable = maybe.get
+          val data = callable.send() match {
+            case Left(a) => Left(Channel(a))
+            case Right(b) => Right(b)
+          }
+          environment += (n -> data)
+        }
 
       // Similar to above, but we need to also look up the channel stored
       // in the variable before we can block on it. Fatal error if no such
@@ -167,13 +222,22 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       case ReceiveIndirect(vc, n) =>
         environment get vc match {
           case Some(Left(chan)) =>
-            blocked = Some((chan, n))
-            this synchronized wait
+            val maybe = externs.get(chan.n)
+            if (maybe.isEmpty) {
+              blocked = Some((chan, n))
+              this synchronized wait
+            } else {
+              val callable = maybe.get
+              val data = callable.send() match {
+                case Left(a) => Left(Channel(a))
+                case Right(b) => Right(b)
+              }
+              environment += (n -> data)
+            }
           case _ =>
             fatalError()
         }
 
-      // TODO: read and print can't be primitives - need to allow dereferencing them.
       //       note that this approach will also allow possible extension functionality
       //       - for example, providing a method loading approach allowing for externally
       //       provided atoms that run specified code on send / receive? Might need a bit
@@ -188,21 +252,17 @@ class Interpreter(p: List[Instruction]) extends Runnable {
       //       would be to have syntax like `extern @chan` which will cause the interpreter
       //       to redirect in / out statements to `@chan` to external code with a given
       //       interface.
-      case Read(n) =>
-        val line = readLine("> ")
-        try {
-          val longValue = line.toLong
-          environment += (n -> Right(longValue))
-        } catch {
-          case e: NumberFormatException => environment += (n -> Left(Channel(line)))
-        }
-
-      case Print() => println(stack.peek)
-
       case Let(vn, a) =>
         environment += (vn -> a)
 
       case Delete(vn) => environment -= vn
+
+      case ParallelGuard(label, count) =>
+        Scheduler.parallelGuard(this, label, count)
+        this synchronized wait
+
+      case ThreadDone(label) =>
+        Scheduler.threadDone(label)
     }
   }
 

@@ -10,14 +10,12 @@ object Application extends App {
   Label("a"),
   ReceiveDirect(Channel("chan"), Variable("x_a")),
   Push(10),
-  Print(),
   End(),
   Label("b"),
   ReceiveDirect(Channel("chan"), Variable("x_b")),
   Push(20),
-  Print(),
   End()
   )
-  val i = new Interpreter(p)
+  val i = new Interpreter(p, Map())
   i.run()
 }
