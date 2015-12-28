@@ -6,7 +6,7 @@ import uk.ac.cam.bsc28.diss.VM.{Scheduler, Interpreter}
 
 object Application extends App {
 
-  val prog = // TODO: synchronisation - shouldn't print welcome until parallel terminates
+  val prog =
     """
       |external @stdio
       |
