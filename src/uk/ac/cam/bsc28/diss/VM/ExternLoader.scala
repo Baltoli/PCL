@@ -19,7 +19,7 @@ object ExternLoader {
 
 class ExternLoader {
 
-  private val pathURL = new URI("file://" + System.getProperty("user.dir") + "/").toURL
+  private val pathURL = new URI("file://" + "/usr/local/bin/picl/").toURL // TODO: configure
   private val classLoader = new URLClassLoader(Array(pathURL))
   private val mirror = ru.runtimeMirror(classLoader)
 
