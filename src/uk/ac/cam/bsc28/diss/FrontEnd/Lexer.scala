@@ -9,6 +9,10 @@ package uk.ac.cam.bsc28.diss.FrontEnd
   * a let Var = @atom in { ... } syntax. Let is the only new token here.
   */
 
+class LexException(m: String) extends Exception {
+  override def getMessage = m
+}
+
 object Lexer {
   val varName = """^([A-Z][a-z]*)(.*)""".r
   val channelName = """^@((?:[a-z]|_)+)(.*)""".r
@@ -59,7 +63,8 @@ object Lexer {
       case Some((token, rest)) => tokenize(rest, token::acc)
       case None => p match {
         case "" => acc reverse
-        case _ => throw new ArithmeticException() // TODO
+        case s =>
+          throw new LexException(s"Lexing Error when trying to lex remaining text (no valid token found): $s")
       }
     }
   }

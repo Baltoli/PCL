@@ -6,8 +6,10 @@ import uk.ac.cam.bsc28.diss.FrontEnd.Parser.ParseResult
 // TODO: better error propagation
 // TODO: tests
 
-class ParseError(e: String) {
+class ParseError(e: String) extends Exception {
   val err = e
+
+  override def getMessage = e
 }
 
 object Parser {
@@ -41,8 +43,14 @@ class Parser(lexed: List[Token]) {
 
   def parse(): Option[ParseTree.Start] = {
     matchStart() match {
-      case Left(s) => Some(s)
-      case _ => None
+      case Left(s) =>
+        if (currentToken().isEmpty) {
+          Some(s)
+        } else {
+          throw new ParseError("Parse Error: tokens remain at end of parse.")
+        }
+      case Right(err) =>
+        throw err
     }
   }
 
@@ -61,7 +69,7 @@ class Parser(lexed: List[Token]) {
       case Some(ChannelName(cn)) =>
         eat(ChannelName(cn))
         Left(ParseTree.ChannelName(cn))
-      case _ => Parser.syntaxError("Name")
+      case _ => Parser.syntaxError("Syntax Error: Expected Name")
     }
   }
 
@@ -201,7 +209,10 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (varResult, exprResult, moreResult) match {
           case (Left(varName), Left(expr), Left(more)) => Left(ParseTree.OutProcess(varName, expr, more))
-          case _ => Parser.syntaxError("Process: out")
+
+          case (Right(e), _, _) => Right(e)
+          case (_, Right(e), _) => Right(e)
+          case (_, _, Right(e)) => Right(e)
         }
 
       case Some(In()) =>
@@ -221,7 +232,7 @@ class Parser(lexed: List[Token]) {
           case (Right(e), _, _) =>
             Right(e)
           case (_, None, _) =>
-            Parser.syntaxError("Syntax Error: Variable name for 'in' process.")
+            Parser.syntaxError("Syntax Error: Expected Variable Name for 'in' process.")
           case (_, _, Right(e)) =>
             Right(e)
         }
@@ -236,8 +247,10 @@ class Parser(lexed: List[Token]) {
         (leftResult, rightResult, moreResult) match {
           case (Left(leftProc), Left(rightProc), Left(more)) =>
             Left(ParseTree.ParallelProcess(leftProc, rightProc, more))
-          case _ =>
-            Parser.syntaxError("Process: parallel")
+
+          case (Right(e), _, _) => Right(e)
+          case (_, Right(e), _) => Right(e)
+          case (_, _, Right(e)) => Right(e)
         }
 
       case Some(Replicate()) =>
@@ -248,7 +261,9 @@ class Parser(lexed: List[Token]) {
         val moreResult = matchProcessAux()
         (procResult, moreResult) match {
           case (Left(proc), Left(more)) => Left(ParseTree.ReplicateProcess(proc, more))
-          case _ => Parser.syntaxError("Process: replicate")
+
+          case (Right(e), _) => Right(e)
+          case (_, Right(e)) => Right(e)
         }
 
       case Some(OpenSquareBracket()) =>
@@ -264,7 +279,11 @@ class Parser(lexed: List[Token]) {
         (leftResult, rightResult, procResult, moreResult) match {
           case (Left(leftCond), Left(rightCond), Left(proc), Left(more)) =>
             Left(ParseTree.IfProcess(leftCond, rightCond, proc, more))
-          case _ => Parser.syntaxError("Process: if")
+
+          case (Right(e), _, _, _) => Right(e)
+          case (_, Right(e), _, _) => Right(e)
+          case (_, _, Right(e), _) => Right(e)
+          case (_, _, _, Right(e)) => Right(e)
         }
 
       case Some(Let()) =>
@@ -296,8 +315,7 @@ class Parser(lexed: List[Token]) {
         Left(ParseTree.EndProcess())
 
       case _ =>
-        println(currentToken())
-        Parser.syntaxError("Process")
+        Parser.syntaxError("Syntax Error: Unexpected token when parsing process")
     }
   }
 
