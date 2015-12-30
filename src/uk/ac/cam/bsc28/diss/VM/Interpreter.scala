@@ -42,7 +42,9 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
       case Load(v) =>
         environment get v match {
           case Some(Right(value)) => stack push value
-          case _ => fatalError()
+
+          case Some(Left(_)) => fatalError(s"(Load): Variable ${v.n} has type channel")
+          case None => fatalError(s"(Load): No Variable ${v.n} in environment")
         }
 
       case StoreInt(v) =>
@@ -125,7 +127,12 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
               val callable = maybe.get
               callable.receive(Left(data.n))
             }
-          case _ => fatalError()
+
+          case Some(Right(_)) =>
+            fatalError(s"(Send): Variable ${channelVar.n} has type Int")
+
+          case None =>
+            fatalError(s"(Send): No Variable ${channelVar.n} in environment")
         }
 
       case SendIntDirect(chan) =>
@@ -150,7 +157,11 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
               callable.receive(Right(data))
             }
 
-          case _ => fatalError()
+          case Some(Right(_)) =>
+            fatalError(s"(Send): Error: Variable ${channelVar.n} has type Int")
+
+          case None =>
+            fatalError(s"(Send): No Variable ${channelVar.n} in environment")
         }
 
       // In this case we know the channel but not the data to be
@@ -171,8 +182,9 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
                 case Right(b) => Right(b)
               })
             }
+
           case None =>
-            fatalError()
+            fatalError(s"(Send): No Variable ${varName.n} in environment")
         }
 
       // This case just combines the two cases from above where we need
@@ -193,10 +205,14 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
                     case Right(b) => Right(b)
                   })
                 }
-              case _ => fatalError()
+              case Some(Right(_)) =>
+                fatalError(s"(Send): Error: Variable ${channelVar.n} has type Int")
+
+              case None =>
+                fatalError(s"(Send): No Variable ${channelVar.n} in environment")
             }
           case None =>
-            fatalError()
+            fatalError(s"(Send): No Variable ${varName.n} in environment")
         }
 
       // In this case we know the channel and the variable name that will
@@ -234,8 +250,12 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
               }
               environment += (n -> data)
             }
-          case _ =>
-            fatalError()
+
+          case Some(Right(_)) =>
+            fatalError(s"(Receive): Variable ${vc.n} has type Int")
+
+          case None =>
+            fatalError(s"(Receive): No Variable ${vc.n} in environment")
         }
 
       //       note that this approach will also allow possible extension functionality
@@ -295,9 +315,9 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
     false
   }
 
-  def fatalError(): Any = {
-    print("Oops")
-    System.exit(-1)
+  def fatalError(err: String = "ADD ME"): Any = {
+    println(s"Runtime Error $err")
+    System.exit(6)
   }
 
 }
