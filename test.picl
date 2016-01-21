@@ -1,3 +1,7 @@
 external @stdio
 
-out @stdio(@hello_world)
+(
+    (out @x(0) | out @x(1))
+|
+    in @x(Y).in @x(Z).out @stdio(Y - Z)
+)

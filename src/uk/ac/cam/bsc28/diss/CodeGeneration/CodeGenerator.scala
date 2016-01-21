@@ -65,9 +65,21 @@ class CodeGenerator(prog: Start) {
         val endLabel = LabelGenerator.nextLabel()
         val guardLabel = LabelGenerator.nextLabel()
 
-        List(Spawn(leftLabel), Spawn(rightLabel), ParallelGuard(guardLabel, 2), Jump(endLabel)) ++
-        List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(ThreadDone(guardLabel), End()) ++
-        List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(ThreadDone(guardLabel), End()) ++
+        val leftCode = bytecodeForProcess(left)
+        val leftCodeAmended = leftCode match {
+          case List(End()) => List()
+          case _ => leftCode
+        }
+
+        val rightCode = bytecodeForProcess(right)
+        val rightCodeAmended = rightCode match {
+          case List(End()) => List()
+          case _ => rightCode
+        }
+
+        List(ParallelGuard(guardLabel, 2), Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
+        List(Label(leftLabel)) ++ leftCodeAmended ++ List(ThreadDone(guardLabel), End()) ++
+        List(Label(rightLabel)) ++ rightCodeAmended ++ List(ThreadDone(guardLabel), End()) ++
         List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
 
       case ReplicateProcess(proc, aux) =>

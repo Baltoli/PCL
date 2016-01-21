@@ -279,6 +279,10 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
 
       case ParallelGuard(label, count) =>
         Scheduler.parallelGuard(this, label, count)
+        for (i <- 0 until count) {
+          execute(program(programCounter + i + 1))
+        }
+        programCounter += count
         this synchronized wait
 
       case ThreadDone(label) =>
@@ -304,15 +308,17 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
   }
 
   def receive(c: Channel, v: Atom): Boolean = {
-    blocked foreach (p =>
-      if(c == p._1) {
-        environment += (p._2 -> v)
-        blocked = None
-        this synchronized notify
-        return true
+    this synchronized {
+      blocked foreach { p =>
+        if (c == p._1) {
+          environment += (p._2 -> v)
+          blocked = None
+          this synchronized notify
+          return true
+        }
       }
-    )
-    false
+      false
+    }
   }
 
   def fatalError(err: String = "ADD ME"): Any = {
