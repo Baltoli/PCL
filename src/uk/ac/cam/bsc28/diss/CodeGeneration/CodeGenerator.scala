@@ -67,13 +67,13 @@ class CodeGenerator(prog: Start) {
 
         val leftCode = bytecodeForProcess(left)
         val leftCodeAmended = leftCode match {
-          case List(End()) => List()
+          case prefix :+ End() => prefix
           case _ => leftCode
         }
 
         val rightCode = bytecodeForProcess(right)
         val rightCodeAmended = rightCode match {
-          case List(End()) => List()
+          case prefix :+ End() => prefix
           case _ => rightCode
         }
 
