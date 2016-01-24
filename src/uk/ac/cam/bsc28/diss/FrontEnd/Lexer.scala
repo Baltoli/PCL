@@ -32,6 +32,7 @@ object Lexer {
   val openCurlyBracket = """^\{(.*)""".r
   val closeCurlyBracket = """^\}(.*)""".r
   val equals = """^=(.*)""".r
+  val fresh = """^fresh(.*)""".r
 
   private def eat(p: String): Option[(Token, String)] = {
     p match {
@@ -51,6 +52,7 @@ object Lexer {
       case openCurlyBracket(rest) => Some(OpenCurlyBracket(), rest trim)
       case closeCurlyBracket(rest) => Some(CloseCurlyBracket(), rest trim)
       case equals(rest) => Some(Equals(), rest trim)
+      case fresh(rest) => Some(Fresh(), rest trim)
 
       case varName(name, rest) => Some(VarName(name), rest trim)
       case channelName(name, rest) => Some(ChannelName(name), rest trim)

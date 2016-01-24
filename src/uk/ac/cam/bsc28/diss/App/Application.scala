@@ -50,6 +50,8 @@ object Application extends App {
 
     try {
       val tokens = Lexer.tokenize(source)
+      debugPrint(tokens)
+
       val parser = new Parser(tokens)
       val tree = parser.parse()
 

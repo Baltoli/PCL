@@ -20,3 +20,4 @@ case class CloseSquareBracket() extends Token
 case class OpenCurlyBracket() extends Token
 case class CloseCurlyBracket() extends Token
 case class Equals() extends Token
+case class Fresh() extends Token

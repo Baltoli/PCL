@@ -1,7 +1,7 @@
 external @stdio
 
 (
-    (out @x(0) | out @x(1))
+    (out @x(0) | out @x(1)).fresh X { end }
 |
     in @x(Y).in @x(Z).out @stdio(Y - Z)
 )
