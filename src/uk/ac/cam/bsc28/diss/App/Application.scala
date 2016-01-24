@@ -1,10 +1,11 @@
 package uk.ac.cam.bsc28.diss.App
 
-import java.io.File
-
 import uk.ac.cam.bsc28.diss.CodeGeneration.CodeGenerator
 import uk.ac.cam.bsc28.diss.FrontEnd._
 import uk.ac.cam.bsc28.diss.VM.{Scheduler}
+
+trait AppMode
+case object DumpIR extends AppMode
 
 object Application extends App {
 
@@ -12,9 +13,21 @@ object Application extends App {
 
   override def main(args: Array[String]): Unit = {
 
-    if (args.length != 1) {
+    if (args.length != 1 || args.length != 2) {
       println(usage)
       System.exit(1)
+    }
+
+    val mode : Option[AppMode] = if (args.length == 2) {
+      if (args(1) == "--dump") {
+        Some(DumpIR)
+      } else {
+        println(s"Error: unrecognized mode selector (${args(0)}")
+        System.exit(6)
+        None
+      }
+    } else {
+      None
     }
 
     val maybeText = Filesystem.textFromTargetFileName(args(0))
