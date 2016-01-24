@@ -13,7 +13,7 @@ object Application extends App {
 
   override def main(args: Array[String]): Unit = {
 
-    if (args.length != 1 || args.length != 2) {
+    if (args.length != 1 && args.length != 2) {
       println(usage)
       System.exit(1)
     }
@@ -22,12 +22,19 @@ object Application extends App {
       if (args(1) == "--dump") {
         Some(DumpIR)
       } else {
-        println(s"Error: unrecognized mode selector (${args(0)}")
+        println(s"Error: unrecognized mode selector (${args(1)})")
         System.exit(6)
         None
       }
     } else {
       None
+    }
+
+    def debugPrint(o: Any) = {
+      mode match {
+        case Some(DumpIR) => println(o)
+        case _ => ()
+      }
     }
 
     val maybeText = Filesystem.textFromTargetFileName(args(0))
@@ -47,8 +54,12 @@ object Application extends App {
       val tree = parser.parse()
 
       if (tree.nonEmpty) {
+        debugPrint(s"Parse Tree:\n${tree.get}\n")
         val gen = new CodeGenerator(tree.get)
         val bytecode = gen.generate()
+
+        debugPrint("Bytecode:")
+        bytecode foreach debugPrint
 
         val sched = new Scheduler(bytecode, externs)
 
