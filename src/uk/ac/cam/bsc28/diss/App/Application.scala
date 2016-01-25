@@ -9,7 +9,7 @@ case object DumpIR extends AppMode
 
 object Application extends App {
 
-  private final val usage = "usage: picl file"
+  private final val usage = "usage: picl file [--dump]"
 
   override def main(args: Array[String]): Unit = {
 
@@ -62,10 +62,11 @@ object Application extends App {
 
         debugPrint("Bytecode:")
         bytecode foreach debugPrint
+        debugPrint("")
 
         val sched = new Scheduler(bytecode, externs)
 
-        sched.spawn(0, Map())
+        sched.spawn(0, Map(), None)
     } else {
         println("Parsing error!")
         System.exit(3)

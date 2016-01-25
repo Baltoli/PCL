@@ -3,35 +3,27 @@ package uk.ac.cam.bsc28.diss.VM
 import uk.ac.cam.bsc28.diss.VM.ExternLoader.ChannelCallable
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
-class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallable]) extends Runnable {
+class Interpreter(program: List[Instruction],
+                  externs: Map[String, ChannelCallable],
+                  parent: Option[Interpreter]) extends Runnable {
 
   val stack = new ArithmeticStack()
 
-  //  TODO: instruction seq copying
-  /**
-    * In the future it may be useful to not copy the instruction
-    * sequence when we spawn a new interpreter off. Instead the
-    * scheduler should maintain the instruction sequence and have
-    * all the interpreters refer to it. This works because the
-    * sequence is never actually modified.
-    */
+  type Environment = Map[Variable, Atom]
+  var environment : Environment = Map()
 
-  /**
-    * The interpreter environment maps _variables_ to either atoms
-    * or integer values.
-    */
-  var environment = Map[Variable, Atom]()
   var labels = Map[String, Int]()
 
   var programCounter = 0
 
   var blocked: Option[Pair[Channel, Variable]] = None
 
-  def copy(): Interpreter = {
-    val interpreter = new Interpreter(program, externs)
-    interpreter.environment = environment
-    interpreter.labels = labels
-    interpreter
+  def mergedEnvironment(parentEnv: Environment): Environment = {
+    var merged : Environment = Map()
+    environment.keys.foreach { k =>
+      merged += (k -> environment(k))
+    }
+    merged
   }
 
   def execute(i: Instruction): Unit = {
@@ -286,6 +278,14 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
         this synchronized wait
 
       case ThreadDone(label) =>
+        parent synchronized {
+          parent match {
+            case Some(interp) =>
+              interp.environment = mergedEnvironment(interp.environment)
+
+            case _ => ()
+          }
+        }
         Scheduler.threadDone(label)
     }
   }
@@ -323,7 +323,7 @@ class Interpreter(program: List[Instruction], externs: Map[String, ChannelCallab
 
   def fatalError(err: String = "ADD ME"): Any = {
     println(s"Runtime Error $err")
-    System.exit(6)
+    //System.exit(6)
   }
 
 }

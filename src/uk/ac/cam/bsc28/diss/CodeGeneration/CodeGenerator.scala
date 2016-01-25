@@ -28,6 +28,14 @@ class CodeGenerator(prog: Start) {
   }
 
   def bytecodeForProcess(p: Process): List[Instruction] = {
+    val procCode = naiveBytecodeForProcess(p)
+    procCode match {
+      case prefix :+ End() => prefix
+      case _ => procCode
+    }
+  }
+
+  def naiveBytecodeForProcess(p: Process): List[Instruction] = {
     p match {
       case OutProcess(name, expr, aux) =>
         ((name, expr) match {
@@ -65,21 +73,9 @@ class CodeGenerator(prog: Start) {
         val endLabel = LabelGenerator.nextLabel()
         val guardLabel = LabelGenerator.nextLabel()
 
-        val leftCode = bytecodeForProcess(left)
-        val leftCodeAmended = leftCode match {
-          case prefix :+ End() => prefix
-          case _ => leftCode
-        }
-
-        val rightCode = bytecodeForProcess(right)
-        val rightCodeAmended = rightCode match {
-          case prefix :+ End() => prefix
-          case _ => rightCode
-        }
-
         List(ParallelGuard(guardLabel, 2), Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
-        List(Label(leftLabel)) ++ leftCodeAmended ++ List(ThreadDone(guardLabel), End()) ++
-        List(Label(rightLabel)) ++ rightCodeAmended ++ List(ThreadDone(guardLabel), End()) ++
+        List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(ThreadDone(guardLabel), End()) ++
+        List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(ThreadDone(guardLabel), End()) ++
         List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
 
       case ReplicateProcess(proc, aux) =>
@@ -144,6 +140,13 @@ class CodeGenerator(prog: Start) {
         }) ++
           bytecodeForProcess(proc) ++ List(Delete(Variable(vn))) ++
           bytecodeForProcessAux(aux)
+
+      case FreshProcess(VariableName(vn), proc, aux) =>
+        val newChan = Channel("~" + LabelGenerator.nextLabel())
+        val letInstruction = Let(Variable(vn), Left(newChan))
+
+        List(letInstruction) ++ bytecodeForProcess(proc) ++
+        List(Delete(Variable(vn))) ++ bytecodeForProcessAux(aux)
 
       case EndProcess() => List(End())
     }

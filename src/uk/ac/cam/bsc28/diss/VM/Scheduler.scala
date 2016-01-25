@@ -11,12 +11,12 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
     e.c -> loader.loadClassNamed(e.c)
   }
 
-  def spawn(pc: Int, env: Map[Variable, Atom]): Unit = {
+  def spawn(pc: Int, env: Map[Variable, Atom], parent: Option[Interpreter]): Unit = {
     val instances = classes.map { c =>
       c._1 -> loader.newInstance(c._2)
     }
 
-    val interp = new Interpreter(prog, Map() ++ instances)
+    val interp = new Interpreter(prog, Map() ++ instances, parent)
     interp.programCounter = pc
     interp.environment = env
     Scheduler.register(interp, this)
@@ -49,7 +49,7 @@ object Scheduler {
 
   def spawn(interp: Interpreter, pc: Int): Unit = {
     all.get(interp) match {
-      case Some(s) => s.spawn(pc, interp.environment)
+      case Some(s) => s.spawn(pc, interp.environment, Some(interp))
       case None => println("Bad bad unregistered interpreter.")
     }
   }
