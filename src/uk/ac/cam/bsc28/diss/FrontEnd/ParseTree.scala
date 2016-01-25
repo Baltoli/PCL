@@ -51,6 +51,7 @@ object ParseTree {
   case class LetProcess(name: VariableName, value: Expression, proc: Process, more: ProcessAux) extends Process
   case class EndProcess() extends Process
   case class SequentialProcess(first: Process, second: Process) extends Process
+  case class FreshProcess(name: VariableName, proc: Process, more: ProcessAux) extends Process
 
   trait ProcessAux extends Node
   case class SequentialProcessAux(proc: Process, more: ProcessAux) extends ProcessAux

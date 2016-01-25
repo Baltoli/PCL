@@ -310,6 +310,28 @@ class Parser(lexed: List[Token]) {
           case (_, _, _, Right(e)) => Right(e)
         }
 
+      case Some(Fresh()) =>
+        eat(Fresh())
+        val nameResult = currentToken() match {
+          case Some(VarName(vn)) =>
+            eat(VarName(vn))
+            Some(vn)
+          case _ => None
+        }
+        eat(OpenCurlyBracket())
+        val procResult = matchProcess()
+        eat(CloseCurlyBracket())
+        val moreResult = matchProcessAux()
+        (nameResult, procResult, moreResult) match {
+          case (Some(name), Left(proc), Left(more)) =>
+            Left(ParseTree.FreshProcess(ParseTree.VariableName(name), proc, more))
+
+          case (None, _, _) =>
+            Parser.syntaxError("Syntax error: Bad variable name in fresh binding.")
+          case (_, Right(e), _) => Right(e)
+          case (_, _, Right(e)) => Right(e)
+        }
+
       case Some(End()) =>
         eat(End())
         Left(ParseTree.EndProcess())

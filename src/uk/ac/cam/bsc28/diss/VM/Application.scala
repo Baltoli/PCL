@@ -16,6 +16,6 @@ object Application extends App {
   Push(20),
   End()
   )
-  val i = new Interpreter(p, Map())
+  val i = new Interpreter(p, Map(), None)
   i.run()
 }
