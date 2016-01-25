@@ -1,5 +1,6 @@
 package uk.ac.cam.bsc28.diss.App
 
+import uk.ac.cam.bsc28.diss.Analysis.StaticAnalyser
 import uk.ac.cam.bsc28.diss.CodeGeneration.CodeGenerator
 import uk.ac.cam.bsc28.diss.FrontEnd._
 import uk.ac.cam.bsc28.diss.VM.{Scheduler}
@@ -57,6 +58,16 @@ object Application extends App {
 
       if (tree.nonEmpty) {
         debugPrint(s"Parse Tree:\n${tree.get}\n")
+
+        val errors = StaticAnalyser.analyse(tree.get)
+        errors match {
+          case Some(list) =>
+            list foreach println
+            System.exit(7)
+
+          case _ => debugPrint("No static analysis errors.\n")
+        }
+
         val gen = new CodeGenerator(tree.get)
         val bytecode = gen.generate()
 
