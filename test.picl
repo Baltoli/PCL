@@ -1,19 +1,9 @@
 external @stdio
 
-let B = 0 {
-    fresh Y {
-        fresh Z {
-            (in @stdio(X) | end).(out @stdio X | out @stdio(7 + B))
-        }
-    }.
-    fresh Y {
-        out @stdio(Y)
-    }.
-    fresh Z {
-        let A = Z {
-            let C = @stdio {
-                ((out C(A) | in C(Y)) | out C(1000))
-            }
-        }
+(
+    fresh X {
+        (out X(@z) | in X(Y).out Y(X).in X(Y))
     }
-}
+|
+    in @z(V).out V(V)
+)
