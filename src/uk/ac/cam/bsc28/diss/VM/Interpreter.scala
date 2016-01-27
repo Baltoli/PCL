@@ -1,5 +1,6 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import uk.ac.cam.bsc28.diss.Config.Config
 import uk.ac.cam.bsc28.diss.VM.ExternLoader.ChannelCallable
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 
@@ -27,6 +28,7 @@ class Interpreter(program: List[Instruction],
   }
 
   def execute(i: Instruction): Unit = {
+    Config.traceLine(s"${hashCode()}: $i")
     i match {
       case stackOp : StackOperator =>
         stack operate stackOp
@@ -211,43 +213,47 @@ class Interpreter(program: List[Instruction],
       // form a blocking pair, so we can just update `blocked` and call
       // a synchronized wait.
       case ReceiveDirect(c, n) =>
-        val maybe = externs.get(c.n)
-        if (maybe.isEmpty) {
-          blocked = Some((c,n))
-          this synchronized wait
-        } else {
-          val callable = maybe.get
-          val data = callable.send() match {
-            case Left(a) => Left(Channel(a))
-            case Right(b) => Right(b)
+        synchronized {
+          val maybe = externs.get(c.n)
+          if (maybe.isEmpty) {
+            blocked = Some((c, n))
+            wait
+          } else {
+            val callable = maybe.get
+            val data = callable.send() match {
+              case Left(a) => Left(Channel(a))
+              case Right(b) => Right(b)
+            }
+            environment += (n -> data)
           }
-          environment += (n -> data)
         }
 
       // Similar to above, but we need to also look up the channel stored
       // in the variable before we can block on it. Fatal error if no such
       // variable is in the env OR if it's holding an int.
       case ReceiveIndirect(vc, n) =>
-        environment get vc match {
-          case Some(Left(chan)) =>
-            val maybe = externs.get(chan.n)
-            if (maybe.isEmpty) {
-              blocked = Some((chan, n))
-              this synchronized wait
-            } else {
-              val callable = maybe.get
-              val data = callable.send() match {
-                case Left(a) => Left(Channel(a))
-                case Right(b) => Right(b)
+        synchronized {
+          environment get vc match {
+            case Some(Left(chan)) =>
+              val maybe = externs.get(chan.n)
+              if (maybe.isEmpty) {
+                blocked = Some((chan, n))
+                wait
+              } else {
+                val callable = maybe.get
+                val data = callable.send() match {
+                  case Left(a) => Left(Channel(a))
+                  case Right(b) => Right(b)
+                }
+                environment += (n -> data)
               }
-              environment += (n -> data)
-            }
 
-          case Some(Right(_)) =>
-            fatalError(s"(Receive): Variable ${vc.n} has type Int")
+            case Some(Right(_)) =>
+              fatalError(s"(Receive): Variable ${vc.n} has type Int")
 
-          case None =>
-            fatalError(s"(Receive): No Variable ${vc.n} in environment")
+            case None =>
+              fatalError(s"(Receive): No Variable ${vc.n} in environment")
+          }
         }
 
       //       note that this approach will also allow possible extension functionality
@@ -313,7 +319,7 @@ class Interpreter(program: List[Instruction],
         if (c == p._1) {
           environment += (p._2 -> v)
           blocked = None
-          this synchronized notify
+          this notifyAll()
           return true
         }
       }
