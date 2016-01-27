@@ -1,9 +1,7 @@
 external @stdio
 
 (
-    fresh X {
-        (out X(@z) | in X(Y).out Y(X).in X(Y))
-    }
+    !(in @g(X).in @p(Y))
 |
-    in @z(V).out V(V)
+    !(out @g(0).out @p(0))
 )

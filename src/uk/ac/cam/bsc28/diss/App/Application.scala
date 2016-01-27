@@ -2,39 +2,35 @@ package uk.ac.cam.bsc28.diss.App
 
 import uk.ac.cam.bsc28.diss.Analysis.StaticAnalyser
 import uk.ac.cam.bsc28.diss.CodeGeneration.CodeGenerator
+import uk.ac.cam.bsc28.diss.Config.Config
 import uk.ac.cam.bsc28.diss.FrontEnd._
 import uk.ac.cam.bsc28.diss.VM.{Scheduler}
 
-trait AppMode
-case object DumpIR extends AppMode
-
 object Application extends App {
 
-  private final val usage = "usage: picl file [--dump]"
+  private final val usage = "usage: picl file [--dump] [--trace]"
 
   override def main(args: Array[String]): Unit = {
 
-    if (args.length != 1 && args.length != 2) {
+    val flagActions = Map() ++ List(
+      "--dump" -> { () => Config.DUMP_IR = true },
+      "--trace" -> { () => Config.TRACE = true }
+    )
+
+    if (args.length < 1 || args.length > flagActions.size + 1) {
       println(usage)
       System.exit(1)
     }
 
-    val mode : Option[AppMode] = if (args.length == 2) {
-      if (args(1) == "--dump") {
-        Some(DumpIR)
-      } else {
-        println(s"Error: unrecognized mode selector (${args(1)})")
-        System.exit(6)
-        None
-      }
-    } else {
-      None
-    }
+    val flags = args.slice(1,args.length)
+    flags foreach { flag =>
+      flagActions.get(flag) match {
+        case Some(action) =>
+          action()
 
-    def debugPrint(o: Any) = {
-      mode match {
-        case Some(DumpIR) => println(o)
-        case _ => ()
+        case None =>
+          println(s"Invalid flag: $flag")
+          System.exit(8)
       }
     }
 
@@ -51,13 +47,13 @@ object Application extends App {
 
     try {
       val tokens = Lexer.tokenize(source)
-      debugPrint(s"Tokens:\n$tokens\n")
+      Config.dumpLine(s"Tokens:\n$tokens\n")
 
       val parser = new Parser(tokens)
       val tree = parser.parse()
 
       if (tree.nonEmpty) {
-        debugPrint(s"Parse Tree:\n${tree.get}\n")
+        Config.dumpLine(s"Parse Tree:\n${tree.get}\n")
 
         val errors = StaticAnalyser.analyse(tree.get)
         errors match {
@@ -65,15 +61,15 @@ object Application extends App {
             list foreach println
             System.exit(7)
 
-          case _ => debugPrint("No static analysis errors.\n")
+          case _ => Config.dumpLine("No static analysis errors.\n")
         }
 
         val gen = new CodeGenerator(tree.get)
         val bytecode = gen.generate()
 
-        debugPrint("Bytecode:")
-        bytecode foreach debugPrint
-        debugPrint("")
+        Config.dumpLine("Bytecode:")
+        bytecode foreach Config.dumpLine
+        Config.dumpLine("")
 
         val sched = new Scheduler(bytecode, externs)
 
