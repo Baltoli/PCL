@@ -1,7 +1,3 @@
 external @stdio
 
-(
-    !(in @g(X).in @p(Y))
-|
-    !(out @g(0).out @p(0))
-)
+out @stdio(3))

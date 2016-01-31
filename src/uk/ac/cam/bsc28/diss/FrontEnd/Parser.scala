@@ -32,12 +32,18 @@ class Parser(lexed: List[Token]) {
     }
   }
 
-  private def eat(t: Token): Option[ParseError] = {
+  private def eat(t: Token) = {
     currentToken() match {
       case Some(token) =>
-        if (token == t) {tokenIndex += 1; None} else Some(new ParseError("Syntax error!"))
+        if (token == t) {
+          tokenIndex += 1
+          None
+        } else {
+          throw new ParseError(s"Syntax error: expected $t but found $token.")
+        }
+
       case None =>
-        Some(new ParseError("Internal consistency error - no token at index."))
+        throw new ParseError(s"Syntax error: expected $t but no token found.")
     }
   }
 
@@ -108,22 +114,22 @@ class Parser(lexed: List[Token]) {
         eat(IntegerLiteral(iv))
         Left(ParseTree.LiteralFactor(iv))
 
-      case _ => Parser.syntaxError("Syntax Error: Expected integer or variable name.")
-    }
-  }
-
-  private def matchTerm(): ParseResult[ParseTree.Term] = {
-    currentToken() match {
       case Some(OpenBracket()) =>
         eat(OpenBracket())
         val exprResult = matchExpression()
         eat(CloseBracket())
         exprResult match {
           case Left(expr) =>
-            Left(ParseTree.ParenthesisedExpressionTerm(expr))
+            Left(ParseTree.ParenthesisedExpressionFactor(expr))
           case Right(e) => Right(e)
         }
 
+      case _ => Parser.syntaxError("Syntax Error: Expected integer or variable name.")
+    }
+  }
+
+  private def matchTerm(): ParseResult[ParseTree.Term] = {
+    currentToken() match {
       case Some(_) =>
         val firstResult = matchFactor ()
         val auxResult = matchTermAux ()

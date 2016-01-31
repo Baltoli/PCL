@@ -25,10 +25,10 @@ object ParseTree {
   trait Factor extends Node
   case class VariableFactor(n: VariableName) extends Factor
   case class LiteralFactor(v: Long) extends Factor
+  case class ParenthesisedExpressionFactor(e: Expression) extends Factor
 
   trait Term extends Node
   case class FactorAuxTerm(f: Factor, more: TermAux) extends Term
-  case class ParenthesisedExpressionTerm(e: Expression) extends Term
 
   trait TermAux extends Node
   case class OperatorTermAux(op: MultiplyOperation, f: Factor, more: TermAux) extends TermAux
