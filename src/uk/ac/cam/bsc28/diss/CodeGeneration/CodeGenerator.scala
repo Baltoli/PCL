@@ -187,9 +187,6 @@ class CodeGenerator(prog: Start) {
     t match {
       case FactorAuxTerm(f, more) =>
         bytecodeForFactor(f) ++ bytecodeForTermAux(more)
-
-      case ParenthesisedExpressionTerm(e) =>
-        bytecodeForExpression(e)
     }
   }
 
@@ -213,6 +210,9 @@ class CodeGenerator(prog: Start) {
 
       case LiteralFactor(v) =>
         List(Push(v))
+
+      case ParenthesisedExpressionFactor(e) =>
+        bytecodeForExpression(e)
 
       case _ => List() // TODO: error
     }
