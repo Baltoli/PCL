@@ -1,10 +1,12 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import uk.ac.cam.bsc28.diss.Config.Config
 import uk.ac.cam.bsc28.diss.FrontEnd.ExternProcessor.ExternChannel
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 import java.util.concurrent.Executors.newCachedThreadPool
 
 import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 
 class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
 
@@ -24,9 +26,7 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
     interp.environment = env
     Scheduler.register(interp, this)
 
-    Scheduler.runInNewThread { _ =>
-      interp.run()
-    }
+    Scheduler.runInNewThread(interp.run)
   }
 
 }
@@ -36,15 +36,45 @@ object Scheduler {
   val all = TrieMap[Interpreter, Scheduler]()
   var semaphores = Map[String, (Interpreter, Int)]()
 
-  val pool = newCachedThreadPool()
-  val lock = new Object()
+  def runInNewThread(f: () => Unit): Unit = {
+    var tries = 1
+    var success = false
 
-  def runInNewThread(f: Unit => Unit): Unit = {
-    pool.execute(new Thread {
-      override def run(): Unit = {
-        f()
+    while (tries > 0) {
+      try {
+        val t = new Thread {
+          override def run(): Unit = f()
+        }
+        t.start()
+
+        success = true
+        tries = 0
+      } catch {
+        case e: OutOfMemoryError =>
+          if (Config.KILL_THREADS) {
+            val blocks = new mutable.HashSet[(Channel, Variable)]()
+            all foreach { i =>
+              i._1.blocked match {
+                case Some(b) =>
+                  if (blocks.contains(b)) {
+                    i._1.kill()
+                  }
+                  blocks += b
+
+                case _ => ()
+              }
+            }
+          } else {
+            throw e
+          }
       }
-    })
+
+      tries -= 1
+    }
+
+    if (!success) {
+      throw new OutOfMemoryError("No memory for threads.")
+    }
   }
 
   def register(i: Interpreter, s: Scheduler): Unit = {

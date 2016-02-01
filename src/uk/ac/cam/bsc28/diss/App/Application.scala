@@ -14,7 +14,8 @@ object Application extends App {
 
     val flagActions = Map() ++ List(
       "--dump" -> { () => Config.DUMP_IR = true },
-      "--trace" -> { () => Config.TRACE = true }
+      "--trace" -> { () => Config.TRACE = true },
+      "--pure" -> { () => Config.KILL_THREADS = false}
     )
 
     if (args.length < 1 || args.length > flagActions.size + 1) {

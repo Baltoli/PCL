@@ -1,5 +1,3 @@
 external @stdio
 
-fresh X {
-    !((in X(X).out X(0) | out X(@stdio)))
-}
+end

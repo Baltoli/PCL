@@ -6,6 +6,7 @@ object Config {
 
   var DUMP_IR = false
   var TRACE = false
+  var KILL_THREADS = true
 
   def configPrint(stream: PrintStream, cond: => Boolean)(o: Any) = {
     if (cond) {
