@@ -1,7 +1,5 @@
 package uk.ac.cam.bsc28.diss.VM
 
-import java.util.concurrent.{ThreadPoolExecutor, ExecutorService}
-
 import uk.ac.cam.bsc28.diss.FrontEnd.ExternProcessor.ExternChannel
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
 import java.util.concurrent.Executors.newCachedThreadPool
@@ -16,7 +14,7 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
     e.c -> loader.loadClassNamed(e.c)
   }
 
-  def spawn(pc: Int, env: Map[Variable, Atom], parent: Option[Interpreter], postRunHook: Unit => Unit = {_ => ()}): Unit = {
+  def spawn(pc: Int, env: Map[Variable, Atom], parent: Option[Interpreter]): Unit = {
     val instances = classes.map { c =>
       c._1 -> loader.newInstance(c._2)
     }
@@ -28,13 +26,6 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
 
     Scheduler.runInNewThread { _ =>
       interp.run()
-
-      Scheduler.lock synchronized {
-        while (Scheduler.pool.getActiveCount != 1) {
-          Scheduler.lock.wait()
-        }
-      }
-      postRunHook()
     }
   }
 
@@ -45,7 +36,7 @@ object Scheduler {
   val all = TrieMap[Interpreter, Scheduler]()
   var semaphores = Map[String, (Interpreter, Int)]()
 
-  val pool : ThreadPoolExecutor = newCachedThreadPool().asInstanceOf[ThreadPoolExecutor]
+  val pool = newCachedThreadPool()
   val lock = new Object()
 
   def runInNewThread(f: Unit => Unit): Unit = {
