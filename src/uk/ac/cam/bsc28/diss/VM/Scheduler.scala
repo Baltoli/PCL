@@ -1,7 +1,12 @@
 package uk.ac.cam.bsc28.diss.VM
 
+import java.util.concurrent.{ThreadPoolExecutor, ExecutorService}
+
 import uk.ac.cam.bsc28.diss.FrontEnd.ExternProcessor.ExternChannel
 import uk.ac.cam.bsc28.diss.VM.Types.Atom
+import java.util.concurrent.Executors.newCachedThreadPool
+
+import scala.collection.concurrent.TrieMap
 
 class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
 
@@ -11,7 +16,7 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
     e.c -> loader.loadClassNamed(e.c)
   }
 
-  def spawn(pc: Int, env: Map[Variable, Atom], parent: Option[Interpreter]): Unit = {
+  def spawn(pc: Int, env: Map[Variable, Atom], parent: Option[Interpreter], postRunHook: Unit => Unit = {_ => ()}): Unit = {
     val instances = classes.map { c =>
       c._1 -> loader.newInstance(c._2)
     }
@@ -23,6 +28,13 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
 
     Scheduler.runInNewThread { _ =>
       interp.run()
+
+      Scheduler.lock synchronized {
+        while (Scheduler.pool.getActiveCount != 1) {
+          Scheduler.lock.wait()
+        }
+      }
+      postRunHook()
     }
   }
 
@@ -30,28 +42,30 @@ class Scheduler(prog: List[Instruction], externs: List[ExternChannel]) {
 
 object Scheduler {
 
-  var all = Map[Interpreter, Scheduler]()
+  val all = TrieMap[Interpreter, Scheduler]()
   var semaphores = Map[String, (Interpreter, Int)]()
 
+  val pool : ThreadPoolExecutor = newCachedThreadPool().asInstanceOf[ThreadPoolExecutor]
+  val lock = new Object()
+
   def runInNewThread(f: Unit => Unit): Unit = {
-    new Thread {
+    pool.execute(new Thread {
       override def run(): Unit = {
         f()
       }
-    }.start()
+    })
   }
 
   def register(i: Interpreter, s: Scheduler): Unit = {
-    all synchronized {
       all += (i -> s)
-    }
   }
 
   def spawn(interp: Interpreter, pc: Int): Unit = {
-    all.get(interp) match {
-      case Some(s) => s.spawn(pc, interp.environment, Some(interp))
-      case None => println("Bad bad unregistered interpreter.")
-    }
+      all.get(interp) match {
+        case Some(s) => s.spawn(pc, interp.environment, Some(interp))
+        case None =>
+          System.err.println(s"Bad bad unregistered interpreter: ${interp.hashCode()}")
+      }
   }
 
   def parallelGuard(interp: Interpreter, label: String, count: Int): Unit = {

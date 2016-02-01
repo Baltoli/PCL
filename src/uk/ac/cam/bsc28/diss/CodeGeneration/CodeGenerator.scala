@@ -73,18 +73,25 @@ class CodeGenerator(prog: Start) {
         val endLabel = LabelGenerator.nextLabel()
         val guardLabel = LabelGenerator.nextLabel()
 
-        List(ParallelGuard(guardLabel, 2), Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
-        List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(ThreadDone(guardLabel), End()) ++
-        List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(ThreadDone(guardLabel), End()) ++
-        List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
+        val auxCode = bytecodeForProcessAux(aux)
+        auxCode match {
+          case List() =>
+            List(Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
+            List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(End()) ++
+            List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(End()) ++
+            List(Label(endLabel))
 
-      case ReplicateProcess(proc, aux) =>
-        val procLabel = LabelGenerator.nextLabel()
-        val endLabel = LabelGenerator.nextLabel()
+          case _ =>
+            List(ParallelGuard(guardLabel, 2), Spawn(leftLabel), Spawn(rightLabel), Jump(endLabel)) ++
+            List(Label(leftLabel)) ++ bytecodeForProcess(left) ++ List(ThreadDone(guardLabel), End()) ++
+            List(Label(rightLabel)) ++ bytecodeForProcess(right) ++ List(ThreadDone(guardLabel), End()) ++
+            List(Label(endLabel)) ++ bytecodeForProcessAux(aux)
+        }
 
-        List(Spawn(procLabel), Jump(endLabel), Label(procLabel)) ++
-        bytecodeForProcess(proc) ++ List(Jump(procLabel), End(), Label(endLabel)) ++
-        bytecodeForProcessAux(aux)
+      case ReplicateProcess(proc) =>
+        val startLabel = LabelGenerator.nextLabel()
+
+        List(Label(startLabel), Spawn(startLabel)) ++ bytecodeForProcess(proc) ++ List(End())
 
       /*
        * Cases to consider here:

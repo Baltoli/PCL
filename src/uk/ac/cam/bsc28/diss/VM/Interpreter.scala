@@ -64,6 +64,9 @@ class Interpreter(program: List[Instruction],
 
       case End() =>
         programCounter = -1
+        Scheduler.lock synchronized {
+          Scheduler.lock notifyAll()
+        }
 
       case Spawn(s) =>
         Scheduler.spawn(this, labels(s))
@@ -238,7 +241,7 @@ class Interpreter(program: List[Instruction],
               val maybe = externs.get(chan.n)
               if (maybe.isEmpty) {
                 blocked = Some((chan, n))
-                wait
+                wait()
               } else {
                 val callable = maybe.get
                 val data = callable.send() match {
@@ -329,7 +332,7 @@ class Interpreter(program: List[Instruction],
 
   def fatalError(err: String = "ADD ME"): Any = {
     println(s"Runtime Error $err")
-    //System.exit(6)
+    System.exit(6)
   }
 
 }

@@ -264,12 +264,10 @@ class Parser(lexed: List[Token]) {
         eat(OpenBracket())
         val procResult = matchProcess()
         eat(CloseBracket())
-        val moreResult = matchProcessAux()
-        (procResult, moreResult) match {
-          case (Left(proc), Left(more)) => Left(ParseTree.ReplicateProcess(proc, more))
+        procResult match {
+          case Left(proc) => Left(ParseTree.ReplicateProcess(proc))
 
-          case (Right(e), _) => Right(e)
-          case (_, Right(e)) => Right(e)
+          case Right(e) => Right(e)
         }
 
       case Some(OpenSquareBracket()) =>

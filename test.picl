@@ -1,3 +1,5 @@
 external @stdio
 
-out @stdio(3))
+fresh X {
+    !((in X(X).out X(0) | out X(@stdio)))
+}

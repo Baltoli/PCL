@@ -73,7 +73,7 @@ object Application extends App {
 
         val sched = new Scheduler(bytecode, externs)
 
-        sched.spawn(0, Map(), None)
+        sched.spawn(0, Map(), None, {_ => Scheduler.pool.shutdown() })
     } else {
         println("Parsing error!")
         System.exit(3)

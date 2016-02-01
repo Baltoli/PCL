@@ -7,12 +7,13 @@ import uk.ac.cam.bsc28.diss.FrontEnd.ParseTree._
 object LetAnalyser {
 
   def analyse(prog: ParseTree.Node): Option[AnalysisError] = {
-    prog match {
+    None
+    /*prog match {
       case ProcessStart(proc) =>
         validateProcess(proc)
 
       case _ => Some("Invalid program structure.")
-    }
+    }*/
   }
 
   def validateProcess(p: ParseTree.Process): Option[AnalysisError] = {
@@ -28,12 +29,10 @@ object LetAnalyser {
           case _ => None
         }
 
-      case ReplicateProcess(proc, more) =>
+      case ReplicateProcess(proc) =>
         val maybeProc = validateProcess(proc)
-        val maybeAux = validateProcessAux(more)
-        (maybeProc, maybeAux) match {
-          case (Some(e), _) => Some(e)
-          case (_, Some(e)) => Some(e)
+        maybeProc match {
+          case Some(e) => Some(e)
           case _ => None
         }
 
@@ -104,8 +103,8 @@ object LetAnalyser {
       case ParallelProcess(left, right, more) =>
         processInNames(left) | processInNames(right) | processAuxInNames(more)
 
-      case ReplicateProcess(proc, more) =>
-        processInNames(proc) | processAuxInNames(more)
+      case ReplicateProcess(proc) =>
+        processInNames(proc)
 
       case IfProcess(left, right, proc, more) =>
         processInNames(proc) | processAuxInNames(more)
