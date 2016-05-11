@@ -1,0 +1,3 @@
+external @stdio
+external @mem
+end

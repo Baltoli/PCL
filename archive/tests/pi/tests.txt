@@ -1,0 +1,7 @@
+restrict/P.picl restrict/nuP.picl
+parallel/P.picl parallel/PQ.picl
+sync/before.picl sync/after.picl
+other/wiki.picl other/wiki1.picl
+other/wiki1.picl other/wiki2.picl
+other/wiki2.picl other/wiki3.picl
+struct/PQ.picl struct/QP.picl

@@ -1,0 +1,7 @@
+external @stdio
+
+fresh X {
+    (end |
+        ( end | out @stdio(@done))
+    )
+}

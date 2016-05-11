@@ -1,0 +1,128 @@
+external @stdio
+
+fresh Zero {
+fresh Succ {
+fresh True {
+fresh False {
+fresh LazyFalse {
+fresh IsZero {
+fresh IfElse {
+fresh NumApply {
+fresh Inc {
+    (((((((((
+        !(
+            in Zero(Args).
+            in Args(Output).
+            in Args(F).
+            in Args(X).
+            out Output(X)
+        )
+    |
+        !(
+            in Succ(Args).
+            in Args(Output).
+            in Args(N).
+            fresh MoreArgs {
+                out Output(MoreArgs).
+                in MoreArgs(FOutput).
+                in MoreArgs(F).
+                in MoreArgs(X).
+                fresh NArgs {
+                fresh FArgs {
+
+                    out N(NArgs).
+                    out F(FArgs).
+
+                    out NArgs(FArgs).
+                    out FArgs(FOutput).
+
+                    out NArgs(F).
+                    out NArgs(X)
+                }}
+            }
+        )
+   )|
+        !(
+            in True(Args).
+            in Args(Output).
+            in Args(X).
+            in Args(Y).
+            out Output(X)
+        )
+   )|
+        !(
+            in False(Args).
+            in Args(Output).
+            in Args(X).
+            in Args(Y).
+            out Output(Y)
+        )
+   )|
+        !(
+            in LazyFalse(Args).
+            in Args(Output).
+            in Args(X).
+            out Output(False)
+        )
+   )|
+        !(
+            in IsZero(Args).
+            in Args(Output).
+            in Args(N).
+            fresh NArgs {
+                out N(NArgs).
+                out NArgs(Output).
+                out NArgs(LazyFalse).
+                out NArgs(True)
+            }
+        )
+   )|
+        !(
+            in IfElse(Args).
+            in Args(Output).
+            in Args(P).
+            in Args(A).
+            in Args(B).
+            fresh PArgs {
+                out P(PArgs).
+                out PArgs(Output).
+                out PArgs(A).
+                out PArgs(B)
+            }
+        )
+   )|
+        !(
+            in NumApply(Args).
+            in Args(Output).
+            in Args(N).
+            in Args(F).
+            in Args(X).
+            fresh NArgs {
+                out N(NArgs).
+                out NArgs(Output).
+                out NArgs(F).
+                out NArgs(X)
+            }
+        )
+   )|
+        !(
+            in Inc(Args).
+            in Args(Output).
+            in Args(X).
+            out Output(X + 1)
+        )
+   )|
+        fresh Input {
+        fresh SuccInput {
+            out NumApply(Input).
+            out Succ(SuccInput).
+            out Input(@stdio).
+
+            out SuccInput(Input).
+            out SuccInput(Zero).
+            
+            out Input(Inc).
+            out Input(0)
+        }}
+    )
+}}}}}}}}}

@@ -1,0 +1,36 @@
+external @stdio
+
+fresh ExpParams {
+    (
+        !(
+            in ExpParams(Input).
+            in Input(X).
+            in Input(Y).
+            in Input(A).
+            in Input(Cont).
+            [Y = 0] {
+                out Cont(1).end
+            }.
+            [Y = 1] {
+                out Cont(A * X).end
+            }.
+            fresh Args {
+                out ExpParams(Args).
+                out Args(X).
+                out Args(Y - 1).
+                out Args(A * X).
+                out Args(Cont)
+            }
+        )
+    |
+        in @stdio(A).
+        in @stdio(B).
+        fresh Args {
+            out ExpParams(Args).
+            out Args(A).
+            out Args(B).
+            out Args(1).
+            out Args(@stdio)
+        }
+    )
+}

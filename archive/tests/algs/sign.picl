@@ -1,0 +1,22 @@
+external @stdio
+
+fresh SignN {
+fresh SignC {
+    (
+        in SignN(Num).
+        in SignC(Cont).
+        [Num = 0] {
+            out Cont(0).end
+        }.
+        [Num = 1] {
+            out Cont(1).end
+        }.
+        let Div = (1 - 2*Num) / (1 - Num) {
+            out Cont(2*Div - 3)
+        }
+    |
+        in @stdio(N).
+        out SignN(N).
+        out SignC(@stdio)
+    )
+}}

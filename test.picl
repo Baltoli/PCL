@@ -1,3 +1,1 @@
-external @stdio
-
-end
+out @a(0)

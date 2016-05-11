@@ -1,0 +1,3 @@
+external @stdio
+
+(end | out @stdio(@z))

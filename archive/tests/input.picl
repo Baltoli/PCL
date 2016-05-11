@@ -1,0 +1,4 @@
+external @stdio
+
+in @stdio(Input).
+out @stdio(Input + 10)

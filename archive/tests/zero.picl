@@ -1,0 +1,3 @@
+external @stdio
+
+out @stdio(1/0)

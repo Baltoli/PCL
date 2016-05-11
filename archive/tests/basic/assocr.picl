@@ -1,0 +1,11 @@
+external @stdio
+
+(
+    out @stdio(@a)
+|
+    (
+        out @stdio(@b)
+    |
+        out @stdio(@c)
+    )
+)

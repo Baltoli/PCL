@@ -1,0 +1,12 @@
+external @stdio
+
+fresh X {
+    (
+        (
+            in X(N).out @stdio(@a).out @stdio(@b) | 
+            in X(M).out @stdio(@b).out @stdio(@a)
+        )
+    |
+        out X(0)
+    )
+}

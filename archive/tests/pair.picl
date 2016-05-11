@@ -1,0 +1,51 @@
+external @stdio
+
+fresh Pair {
+fresh Print {
+    ((
+        !(
+            in Pair(Args).
+            in Args(Output).
+            in Args(X).
+            fresh YArgs {
+                out Output(YArgs).
+                in YArgs(YOutput).
+                in YArgs(Y).
+                fresh FArgs {
+                    out YOutput(FArgs).
+                    in FArgs(FOutput).
+                    in FArgs(F).
+                    fresh FApp {
+                        out F(FApp).
+                        out FApp(FOutput).
+                        out FApp(X).
+                        fresh FAppTwo {
+                            
+                        }
+                    }
+                }
+            }
+        )
+    |
+        !(
+            in Print(Args).
+            in Args(Output).
+            in Args(X).
+            out Output(X)
+        )
+   )|
+        fresh PIn {
+        fresh XOut {
+        fresh YOut {
+            out Pair(PIn).
+            out PIn(XOut).
+            out PIn(11).
+            in XOut(YIn).
+            out YIn(YOut).
+            out YIn(0).
+            in YOut(FIn).
+            out FIn(@stdio).
+            out FIn(Print)
+        }}}
+    )
+}}

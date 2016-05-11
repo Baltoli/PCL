@@ -1,0 +1,9 @@
+external @stdio
+
+(
+    fresh X {
+        (out X(@z).end | in X(Y).out Y(X).in X(Y).end)
+    }
+|
+    in @z(V).out V(V).out @stdio(@done).end
+)

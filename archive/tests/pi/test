@@ -1,0 +1,19 @@
+#!/bin/bash
+
+if [ ! -f "tests.txt" ]
+then
+    >&2 echo "No tests file found"
+    exit 1
+else
+    while read line
+    do
+        read -a fields <<<"$line"
+        FIRST=${fields[0]}
+        SECOND=${fields[1]}
+        $(./assert $FIRST $SECOND)
+        if [ $? = 1 ]
+        then
+            exit 1
+        fi
+    done <tests.txt
+fi

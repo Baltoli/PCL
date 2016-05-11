@@ -1,0 +1,7 @@
+external @stdio
+
+fresh X {
+    fresh Y {
+        out @stdio(@a)
+    }
+}

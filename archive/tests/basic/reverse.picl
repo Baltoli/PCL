@@ -1,0 +1,7 @@
+external @stdio
+
+(
+    out @stdio(@b)
+|
+    out @stdio(@a)
+)
