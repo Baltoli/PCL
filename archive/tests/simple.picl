@@ -1,7 +1,0 @@
-external @stdio
-
-(
-    in @x(Y).out @stdio(Y).end
-|
-    out @x(@z).end
-)

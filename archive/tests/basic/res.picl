@@ -1,5 +1,0 @@
-external @stdio
-
-fresh X {
-    out @stdio(@a)
-}

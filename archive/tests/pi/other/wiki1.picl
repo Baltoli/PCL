@@ -1,9 +1,0 @@
-external @stdio
-
-(
-    fresh X {
-        (end | out @z(X).in X(Y).end)
-    }
-|
-    in @z(V).out V(V).out @stdio(@done).end
-)

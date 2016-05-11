@@ -1,7 +1,0 @@
-external @stdio
-
-fresh X {
-    (end | 
-        (in X(Y).end | out X(X).out @stdio(@done))
-    )
-}

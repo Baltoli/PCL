@@ -1,7 +1,0 @@
-external @stdio
-
-(
-    out @stdio(@first)
-|
-    out @stdio(@second)
-)

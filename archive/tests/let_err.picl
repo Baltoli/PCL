@@ -1,6 +1,0 @@
-external @stdio
-
-let X = 100 {
-    out @stdio(X)
-}.
-out @stdio(X)

@@ -1,3 +1,0 @@
-external @stdio
-
-(out @x(@z).end | in @x(Y).out @stdio(Y))

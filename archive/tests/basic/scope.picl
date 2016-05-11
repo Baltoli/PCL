@@ -1,9 +1,0 @@
-external @stdio
-
-(
-    fresh X {
-        out @stdio(@a)
-    }
-|
-    out @stdio(@b)
-)

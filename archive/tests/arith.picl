@@ -1,4 +1,0 @@
-external @stdio
-
-in @stdio(Num).
-out @stdio(Num*2 + 1)

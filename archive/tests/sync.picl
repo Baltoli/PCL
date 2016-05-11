@@ -1,9 +1,0 @@
-external @stdio
-
-(
-    in @channel(X).
-    out @stdio(X)
-|
-    in @stdio(Y).
-    out @channel(Y)
-)
